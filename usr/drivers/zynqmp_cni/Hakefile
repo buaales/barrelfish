@@ -1,0 +1,25 @@
+--------------------------------------------------------------------------
+--
+-- This file is distributed under the terms in the attached LICENSE file.
+-- Hakefile for drivers/zynqmp_gem
+--
+--------------------------------------------------------------------------
+
+[ 
+  build library { target = "zynqmp_cni_module",
+    cFiles = [ "zynqmp_cni.c"],
+    flounderBindings = [ "zynqmp_cni_devif" ],
+    flounderDefs = [ "zynqmp_cni_devif" ],
+    mackerelDevices = [ "zynqmp_cni" ],
+    architectures = [ "armv8" ],
+    addCFlags = [ "-DLIBRARY", "-D ZYNQMP_GEM_DEBUG_ON" ]
+  },
+  build application { target = "zynqmp_cni",
+    cFiles = ["main.c"],
+    addLinkFlags = ["-T" ++ Config.source_dir ++ "/lib/driverkit/bfdrivers.ld" ],
+    mackerelDevices = [ "zynqmp_cni" ],
+    addLibraries = libDeps [ "driverkit", "thc", "contmng", "skb", "ttpc"],
+    addModules = ["zynqmp_cni_module"],
+    architectures = ["armv8"]
+  }
+]
