@@ -14,18 +14,11 @@
  * specific part connects to it
  */
 
-
 interface zynqmp_gem_devif "zynqmp_gem devif communication interface" {
-
-	typedef struct {
-	
-	} tx_msg;
-
-	typedef struct {
-
-	} rx_msg;
-    message interrupt();
-	message send(tx_msg msg);
-	message receive(rx_msg msg[nslots, 32]);
+	message push_tx_msg(uint32 slot, String msg[256]);
+	message read_rx_msg_request(uint32 slot);
+	message read_rx_msg_response(String msg[256]);
+	message check_controller_lifesign_request();
+	message update_host_lifesign(uint32 lifesign);
 };
 

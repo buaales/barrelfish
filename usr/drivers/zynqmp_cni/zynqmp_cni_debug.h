@@ -1,13 +1,14 @@
-#ifndef __CNI_DRIVER_DEBUG_H__
-#define __CNI_DRIVER_DEBUG_H__
+#ifndef __ZYNQMP_CNI_DEBUG_H__
+#define __ZYNQMP_CNI_DEBUG_H__
 
 /*****************************************************************
  * Debug printer:
  *****************************************************************/
-#if defined(CNI_DRIVER_DEBUG_ON) || defined(GLOBAL_DEBUG)
-#define CNI_DRIVER_DEBUG(x...) printf("CNI DRIVER: " x)
+#define ZYNQMP_CNI_DEBUG_ON
+#if defined(ZYNQMP_CNI_DEBUG_ON) || defined(GLOBAL_DEBUG)
+#define ZYNQMP_CNI_DEBUG(x...) printf("CNI DEBUG: " x)
 #else
-#define CNI_DRIVER_DEBUG(x...) ((void)0)
+#define ZYNQMP_CNI_DEBUG(x...) ((void)0)
 #endif
 
 #endif //  __CNI_DEBUG_H__

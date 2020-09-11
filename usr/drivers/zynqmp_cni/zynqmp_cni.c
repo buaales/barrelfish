@@ -17,37 +17,88 @@
 
 #include "zynqmp_cni_debug.h"
 #include "zynqmp_cni.h"
+#include "ram_caps.h"
 
 static zynqmp_cni_t device;
-static uint32_t lifesign;
+static char msg[256];
 
-static void zynqmp_cni_init(mackerel_addr_t vbase) {
+static void zynqmp_cni_init(mackerel_addr_t reg_vbase) {
 	lifesign = 1;
-    zynqmp_cni_initialize(&device, vbase);
-
-	zynqmp_cni_hlife_wr(&device, lifesign);
+    zynqmp_cni_initialize(&device, reg_vbase);
 
 	zynqmp_cni_ctrl_bist_wr(&device, 0x1);
 	zynqmp_cni_ctrl_co_wr(&device, 0x1);
 }
 
-
-static void on_interrupt(struct zynqmp_cni_devif_binding *b)
-{
-    ZYNQMP_CNI_DEBUG("on interrupt called.\n");
-    uint32_t intstat, txstat, rxstat;
-    intstat = zynqmp_gem_intstat_rd(&device);
-    ZYNQMP_CNI_DEBUG("intstat:%x.\n", intstat);
-    if (intstat & ZYNQMP_CNI_INT_CR_MASK) {
-		(struct zynqmp_cni_state *)(b->st)->controller_ready = true;
-    }
-    zynqmp_gem_intstat_wr(&device, 0xffffffff);
+static void rx_push_tx_msg(struct zynqmp_cni_devif_binding* b, uint32_t slot, char* p_msg) {
+	struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
+	memcpy((void*)(state->msg_vbase + slot * CNI_MSG_SLOT_SIZE), p_msg, CNI_MSG_SLOT_SIZE);
 }
 
-static void on_send(struct zynqmp_cni_devif_binding *b, zynqmp_cni_tx_msg_t msg)
-{
-	//FIXME: send stuff.
-	ZYNQMP_CNI_DEBUG("on send called.\n");
+static void rx_read_rx_msg_request(struct zynqmp_cni_defif_binding* b, uint32_t slot) {
+	struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
+	memcpy(msg, (void*)(state->msg_vbase + slot * CNI_MSG_SLOT_SIZE, 256);
+	tx_read_rx_msg_response(st);
+}
+
+static void rx_update_host_lifesign(struct zynqmp_cni_devif_binding* b, uint32_t lifesign) {
+    zynqmp_cni_hlife_wr(&device, lifesign);
+}
+
+static void rx_check_controller_lifesign_request(struct zynqmp_cni_devif_binding* b) {
+    struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
+    uint32_t lifesign = zynqmp_cni_clife_rd(&device);
+    tx_check_controller_lifesign_response(st, lifesign);
+}
+
+static void tx_read_rx_msg_response_cb(void *a) {
+    ZYNQMP_GEM_DEBUG("tx_read_rx_msg_response done.")
+}
+
+static void tx_read_rx_msg_response(struct zynqmp_cni_state* st) {
+    struct event_closure txcont = MKCONT(tx_read_rx_msg_response_cb, st);
+    err = zynqmp_cni_devif_read_rx_msg_response__tx(st->b, txcont, msg);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT(tx_read_rx_msg_response, st);
+            err = st->b->register_send(st->b, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response register failed!");
+            }
+        }
+        else {
+            ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response error\n");
+        }
+    }
+}
+
+static void tx_check_controller_lifesign_response_cb(void *a) {
+    ZYNQMP_GEM_DEBUG("tx_check_controller_lifesign_response done.")
+}
+
+static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign) {
+    struct event_closure txcont = MKCONT(tx_check_controller_lifesign_response_cb, st);
+    err = zynqmp_cni_devif_check_controller_lifesign_response__tx(st->b, txcont, lifesign);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT(tx_check_controller_lifesign_response, st);
+            err = st->b->register_send(st->b, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response failed!");
+            }
+        }
+        else {
+            ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response error\n");
+        }
+    }
 }
 
 static void export_devif_cb(void *st, errval_t err, iref_t iref)
@@ -60,7 +111,7 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 	// Build label for interal management service
 	sprintf(name, "%s_%s", state->service_name, suffix);
-	ZYNQMP_GEM_DEBUG("registering nameservice %s.\n", name);
+	ZYNQMP_CNI_DEBUG("registering nameservice %s.\n", name);
 	err = nameservice_register(name, iref);
 	assert(err_is_ok(err));
 	state->initialized = true;
@@ -69,9 +120,10 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 static errval_t connect_devif_cb(void *st, struct zynqmp_cni_devif_binding *b)
 {
 	st->binding = b;
-	//b->rpc_rx_vtbl.create_queue_call = on_create_queue;
-	//b->rx_vtbl.transmit_start = on_transmit_start;
-	b->rx_vtbl.interrupt = on_interrupt;
+	b->rx_vtbl.push_tx_msg = rx_push_tx_msg;
+	b->rx_vtbl.read_rx_msg_request = rx_read_rx_msg_request;
+    b->rx_vtbl.update_host_lifesign = rx_update_host_lifesign;
+    b->rx_vtbl.check_controller_lifesign_request = rx_check_controller_lifesign_request;
 	b->st = st;
 	return SYS_ERR_OK;
 }
@@ -95,12 +147,17 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
 	st->controller_ready = false;
 
     errval_t err;
-    lvaddr_t vbase;
+    lvaddr_t reg_vbase, msg_vbase;
+	struct capref frame;
     ZYNQMP_CNI_DEBUG("Map device capability.\n");
-    err = map_device_cap(caps[0], &vbase);
-    assert(err_is_ok(err) && vbase);
-
-    zynqmp_cni_init((mackerel_addr_t)vbase);
+    err = map_device_cap(caps[0], &reg_vbase);
+    assert(err_is_ok(err) && reg_vbase);
+	err = init_ram_caps_manager();
+	assert(err);
+	err = get_ram_cap(SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE, &frame);
+	vspace_map_one_frame_attr(&msg_vbase, SHARED_REGION_CNI_MSG_SIZE, frame, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    zynqmp_cni_init((mackerel_addr_t)reg_vbase, msg_vbase);
+	st->msg_vbase = msg_vbase;
 
     //Enable interrupt
 	zynqmp_cni_inten_wr(&device, 0xffffffff);

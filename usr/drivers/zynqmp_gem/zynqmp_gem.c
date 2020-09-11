@@ -91,12 +91,9 @@ static void zynqmp_gem_hardware_init(mackerel_addr_t vbase) {
     //FIXME: PHY configuration to be implemented if needed.
 }
 
-static errval_t on_create_queue(struct zynqmp_gem_devif_binding *b,
+static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b,
         struct capref rx, struct capref dummy_rx,
-        struct capref tx, struct capref dummy_tx,
-        uint64_t *mac) {
-    
-    errval_t err;
+        struct capref tx, struct capref dummy_tx) {
     struct frame_identity frameid = { .base = 0, .bytes = 0 };
 
     ZYNQMP_GEM_DEBUG("on create queue called.\n");
@@ -117,14 +114,44 @@ static errval_t on_create_queue(struct zynqmp_gem_devif_binding *b,
     err = invoke_frame_identify(dummy_tx, &frameid);
     assert(err_is_ok(err));
     zynqmp_gem_txq1ptr_wr(&device, frameid.base);
+    tx_create_queue_response(b->st, zynqmp_gem_mac);
 
-    *mac = zynqmp_gem_mac;
     //Enable controller
     zynqmp_gem_netctl_mpe_wrf(&device, 0x1);
     zynqmp_gem_netctl_er_wrf(&device, 0x1);
     zynqmp_gem_netctl_et_wrf(&device, 0x1);
 
     return SYS_ERR_OK;
+}
+
+static void tx_create_queue_response_cb(void* a) {
+    ZYNQMP_GEM_DEBUG("tx create queue response sent\n");
+}
+
+static void tx_create_queue_response(void* a, uint64_t mac) {
+    errval_t err;
+    struct zynqmp_gem_state* st = a;
+
+    ZYNQMP_GEM_DEBUG("tx create queue response\n");
+
+    struct event_closure txcont = MKCONT(tx_create_queue_response_cb, st);
+    err = zynqmp_gem_devif_create_queue_response__tx(st->b, txcont, mac);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_GEM_DEBUG("tx create queue response again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT(tx_create_queue_response, st);
+            err = st->b->register_send(st->b, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_GEM_DEBUG("tx create queue response register failed\n");
+            }
+        }
+        else {
+            ZYNQMP_GEM_DEBUG("tx create queue response error\n");
+        }
+    }
 }
 
 static void on_transmit_start(struct zynqmp_gem_devif_binding *b) {
@@ -191,7 +218,7 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 static errval_t connect_devif_cb(void *st, struct zynqmp_gem_devif_binding *b)
 {
-    b->rpc_rx_vtbl.create_queue_call = on_create_queue;
+    b->rx_vtbl.create_queue_call = on_create_queue;
     b->rx_vtbl.transmit_start = on_transmit_start;
     b->rx_vtbl.interrupt = on_interrupt;
     b->st = st;

@@ -7,7 +7,7 @@
 
 [ 
   build library { target = "zynqmp_cni_module",
-    cFiles = [ "zynqmp_cni.c"],
+    cFiles = [ "zynqmp_cni.c", "ram_caps.c" ],
     flounderBindings = [ "zynqmp_cni_devif" ],
     flounderDefs = [ "zynqmp_cni_devif" ],
     mackerelDevices = [ "zynqmp_cni" ],

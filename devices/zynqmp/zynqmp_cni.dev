@@ -139,7 +139,4 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
 
   register tstart rw addr(base 0x48) "time startup" type(uint32);
 
-  register txaddr rw addr(base 0x4c) "transmit address" type(uint32);
-  register rxaddr rw addr(base 0x50) "receive address" type(uint32);
-
 };

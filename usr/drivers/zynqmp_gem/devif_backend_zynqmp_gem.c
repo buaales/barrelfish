@@ -310,13 +310,22 @@ static void interrupt_handler(void* arg) {
     q->int_handler(arg);
 }
 
+static void rx_create_queue_response(struct zynqmp_gem_devif_binding* b, uint64_t mac) {
+    zynqmp_gem_queue_t* q = (zynqmp_gem_queue_t*)b->st;
+    q->mac_address = mac;
+}
+
+struct xmplrpc_rx_vtbl c_rx_vtbl = {
+    .create_queue_resonse = rx_create_queue_response,
+};
+
 static void bind_cb(void *st, errval_t err, struct zynqmp_gem_devif_binding *b)
 {
     zynqmp_gem_queue_t* q = (zynqmp_gem_queue_t*) st;
     b->st = st;
+    b->rx_vtbl = c_rx_vtbl;
     
     q->b = b;
-    zynqmp_gem_devif_rpc_client_init(q->b);
     q->bound = true;
 }
 
@@ -394,7 +403,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     q->int_handler = int_handler;
     err = inthandler_setup_arm(interrupt_handler, q, ZYNQMP_GEM_IRQ);
 
-    err = q->b->rpc_tx_vtbl.create_queue(q->b, q->rx_ring_cap, q->dummy_rx_ring_cap, q->tx_ring_cap, q->dummy_tx_ring_cap, &q->mac_address);
+    err = q->b->tx_vtbl.create_queue_call(q->b, q->rx_ring_cap, q->dummy_rx_ring_cap, q->tx_ring_cap, q->dummy_tx_ring_cap);
     if (err_is_fail(err)) {
         return err;
     }
