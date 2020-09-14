@@ -14,61 +14,26 @@
 typedef struct zynqmp_gem_queue {
     struct devq q;
 
-    zynqmp_gem_t device;
     uint64_t mac_address;
 
-    volatile rx_desc_t *rx_ring;
-    volatile rx_desc_t *dummy_rx_ring;
-    volatile tx_desc_t *tx_ring;
-    volatile tx_desc_t *dummy_tx_ring;
-    struct capref rx_ring_cap;
-    struct capref dummy_rx_ring_cap;
-    struct capref tx_ring_cap;
-    struct capref dummy_tx_ring_cap;
+    uint32_t tx_head, tx_tail, rx_head, rx_tail;
 
-    int n_rx_buffers;
-    int n_tx_buffers;
+    regionid_t rid;
+    struct capref region;
+    lvaddr_t region_base;
 
-    regionid_t region_id;
-    genpaddr_t region_base;
-    gensize_t  region_size;
+    struct capref shared_vars_region;
+    lvaddr_t shared_vars_base;
+    struct capref shared_tx_region;
+    lvaddr_t shared_tx_base;
+    struct capref shared_rx_region;
+    lvaddr_t shared_rx_base;
 
-    unsigned rx_head, rx_tail;
-    unsigned tx_head, tx_tail;
-
-    void (*int_handler)(void *);
+    void (*isr)(void*);
 
     // binding
     bool bound;
     struct zynqmp_gem_devif_binding* b;
 } zynqmp_gem_queue_t;
-
-static inline size_t zynqmp_gem_queue_free_rxslots(zynqmp_gem_queue_t* q)
-{
-    size_t head = q->rx_head;
-    size_t tail = q->rx_tail;
-    size_t size = q->n_rx_buffers;
-
-    if (tail >= head) {
-        return size - (tail - head); 
-    } else {
-        return size - (tail + size - head); 
-    }
-}
-
-static inline size_t zynqmp_gem_queue_free_txslots(zynqmp_gem_queue_t* q)
-{
-
-    size_t head = q->tx_head;
-    size_t tail = q->tx_tail;
-    size_t size = q->n_tx_buffers;
-
-    if (tail >= head) {
-        return size - (tail - head); 
-    } else {
-        return size - (tail + size - head); 
-    }
-
-}
 
 #endif

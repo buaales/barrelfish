@@ -41,6 +41,8 @@
 #include <driverkit/driverkit.h>
 #include <barrelfish/nameservice_client.h>
 
+#include "zynqmp_gem.h"
+
 /**
  * Instantiate the driver domain.
  *

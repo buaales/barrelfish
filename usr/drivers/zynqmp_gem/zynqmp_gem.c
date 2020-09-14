@@ -26,102 +26,37 @@
 #include "zynqmp_gem.h"
 
 static zynqmp_gem_t device;
+static struct zynqmp_gem_state* state;
 
-static uint64_t zynqmp_gem_mac;
+void foo() {
 
-static void zynqmp_gem_hardware_init(mackerel_addr_t vbase) {
-    int i;
-    uint64_t mac_prefix, mac_suffix;
-    zynqmp_gem_initialize(&device, vbase);
-
-    //Disable all interrupts(This reg is reset as disabled, so no need to do this I guess)
-    //zynqmp_gem_intdis_wr(&device, 0x7FFFEFF);
-
-    //Clear the network control register
-    zynqmp_gem_netctl_wr(&device, 0);
-
-    //Clear the statistics registers
-    zynqmp_gem_netctl_casr_wrf(&device, 0x1);
-    //Clear the status registers
-    zynqmp_gem_rxstat_wr(&device, 0x0F);
-    zynqmp_gem_txstat_wr(&device, 0xFF);
-    //Clear the buffer queues
-    zynqmp_gem_rxqptr_wr(&device, 0);
-    zynqmp_gem_txqptr_wr(&device, 0);
-    zynqmp_gem_rxq1ptr_wr(&device, 0);
-    zynqmp_gem_txq1ptr_wr(&device, 0);
-
-    //Clear mac registers
-	for (i = 0; i < 4; i++) {
-	    zynqmp_gem_spcaddbt_wr(&device, i, 0);
-	    zynqmp_gem_spcaddtp_wr(&device, i, 0);
-		// Do not use MATCHx register
-	    zynqmp_gem_spctype_wr(&device, i, 0);
-	}
-
-    zynqmp_gem_phymng_wr(&device, 0);
-
-    zynqmp_gem_hashbt_wr(&device, 0); 
-    zynqmp_gem_hashtp_wr(&device, 0);
-
-    zynqmp_gem_netcfg_ehdr_wrf(&device, 0x1);
-    //zynqmp_gem_netcfg_caf_wrf(&device, 0x1);
-    zynqmp_gem_netcfg_fd_wrf(&device, 0x1);
-    zynqmp_gem_netcfg_fr_wrf(&device, 0x1);
-    zynqmp_gem_netcfg_mcd_wrf(&device, 0x3);
-    zynqmp_gem_netcfg_gme_wrf(&device, 0x1);
-    zynqmp_gem_netcfg_spd_wrf(&device, 0x1);
-
-    //FIXME: use burned-in MAC address instead of random one if possible
-    mac_prefix = ZYNQMP_GEM_MAC_PREFIX;
-    srand((int)time(0));
-    mac_suffix = rand() % 0x1000000;
-    zynqmp_gem_mac = mac_prefix << 24 | mac_suffix;
-    zynqmp_gem_spcaddbt_wr(&device, 0, ((mac_prefix & 0xff) << 24) | mac_suffix);
-    zynqmp_gem_spcaddtp_addr_wrf(&device, 0, (mac_prefix & 0xffff00) >> 8);
-
-    zynqmp_gem_dmacfg_rbs_wrf(&device, 0x18);
-    zynqmp_gem_dmacfg_rps_wrf(&device, 0x3);
-    zynqmp_gem_dmacfg_tps_wrf(&device, 0x0);
-    zynqmp_gem_dmacfg_tpte_wrf(&device, 0x1);
-    zynqmp_gem_dmacfg_esp_wrf(&device, 0);
-    zynqmp_gem_dmacfg_esm_wrf(&device, 0);
-    zynqmp_gem_dmacfg_abl_wrf(&device, 0x1);
-
-    //FIXME: PHY configuration to be implemented if needed.
 }
 
+
+/*
 static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b,
         struct capref rx, struct capref dummy_rx,
         struct capref tx, struct capref dummy_tx) {
-    struct frame_identity frameid = { .base = 0, .bytes = 0 };
+    struct zynqmp_gem_state *state = b->st;
+    lvaddr_t va;
 
-    ZYNQMP_GEM_DEBUG("on create queue called.\n");
-
-    err = invoke_frame_identify(rx, &frameid);
+    err = vspace_map_one_frame_attr(&va, ZYNQMP_GEM_N_RX_BUFS * sizeof(rx_desc_t), rx, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     assert(err_is_ok(err));
-    zynqmp_gem_rxqptr_wr(&device, frameid.base);
+    state->rx_descq = (rx_desc_t*)va;
 
-    err = invoke_frame_identify(dummy_rx, &frameid);
+    err = vspace_map_one_frame_attr(&va, ZYNQMP_GEM_N_TX_BUFS * sizeof(tx_desc_t), tx, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     assert(err_is_ok(err));
-    zynqmp_gem_rxq1ptr_wr(&device, frameid.base);
+    state->tx_descq = (tx_desc_t*)va;
 
-    err = invoke_frame_identify(tx, &frameid);
-    assert(err_is_ok(err));
-    zynqmp_gem_txqptr_wr(&device, frameid.base);
-    ZYNQMP_GEM_DEBUG("original txqptr:%x.\n", frameid.base);
-
-    err = invoke_frame_identify(dummy_tx, &frameid);
-    assert(err_is_ok(err));
-    zynqmp_gem_txq1ptr_wr(&device, frameid.base);
-    tx_create_queue_response(b->st, zynqmp_gem_mac);
-
-    //Enable controller
-    zynqmp_gem_netctl_mpe_wrf(&device, 0x1);
-    zynqmp_gem_netctl_er_wrf(&device, 0x1);
-    zynqmp_gem_netctl_et_wrf(&device, 0x1);
+    tx_create_queue_response(state, state->mac);
 
     return SYS_ERR_OK;
+}
+
+static void rx_transmit_start(struct zynqmp_gem_devif_binding* b) {
+    struct zynqmp_gem_state* state = b->st;
+    uint32_t *p_tx_head = (uint32_t *)(state->vars_base + 0x4);
+    uint32_t tx_tail = *(uint32_t *)(state->vars_base + 0x8);
 }
 
 static void tx_create_queue_response_cb(void* a) {
@@ -153,52 +88,7 @@ static void tx_create_queue_response(void* a, uint64_t mac) {
         }
     }
 }
-
-static void on_transmit_start(struct zynqmp_gem_devif_binding *b) {
-    ZYNQMP_GEM_DEBUG("txstat:%x.\n", zynqmp_gem_txstat_rd(&device));
-    ZYNQMP_GEM_DEBUG("start transmission. qptr = %x\n", zynqmp_gem_txqptr_rd(&device));
-    zynqmp_gem_netctl_tsp_wrf(&device, 0x1);
-}
-/*
-static void zynqmp_gem_dump_stats(void) {
-    int i = 0;
-    ZYNQMP_GEM_DEBUG("dump stats#################################");
-    for (i = 0; i < 45; i++) {
-        if (i % 4 == 0) {
-            printf("\noffset:%x\tcontents:", i * 4);
-        }
-        printf("%x\t", zynqmp_gem_stats_rd(&device, i));
-    }
-    ZYNQMP_GEM_DEBUG("\nstats dumped#################################\n");
-}
  */
-
-static void on_interrupt(struct zynqmp_gem_devif_binding *b)
-{
-    ZYNQMP_GEM_DEBUG("on interrupt called.\n");
-    uint32_t intstat, txstat, rxstat;
-    intstat = zynqmp_gem_intstat_rd(&device);
-    ZYNQMP_GEM_DEBUG("intstat:%x.\n", intstat);
-    if (intstat & ZYNQMP_GEM_INT_TC_MASK) {
-        txstat = zynqmp_gem_txstat_rd(&device);
-        //FIXME:do something with txstat.
-        uint32_t qptr = zynqmp_gem_txqptr_rd(&device);
-        ZYNQMP_GEM_DEBUG("Tx completed, txstat:%x, qptr:%x.\n", txstat, qptr);
-        zynqmp_gem_txstat_wr(&device, 0xffffffff);
-    }
-    if (intstat & ZYNQMP_GEM_INT_RC_MASK) {
-        rxstat = zynqmp_gem_rxstat_rd(&device);
-        //FIXME:do something with rxstat.
-        ZYNQMP_GEM_DEBUG("Rx completed, rxstat:%x.\n", rxstat);
-        //zynqmp_gem_dump_stats();
-        zynqmp_gem_rxstat_wr(&device, 0xffffffff);
-    }
-    if (intstat & ZYNQMP_GEM_INT_TXUSED_MASK) {
-        ZYNQMP_GEM_DEBUG("Tx used bit read.\n");
-        //zynqmp_gem_netctl_tsp_wrf(&device, 0x1);
-    } 
-    zynqmp_gem_intstat_wr(&device, 0xffffffff);
-}
 
 static void export_devif_cb(void *st, errval_t err, iref_t iref)
 {
@@ -219,8 +109,6 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 static errval_t connect_devif_cb(void *st, struct zynqmp_gem_devif_binding *b)
 {
     b->rx_vtbl.create_queue_call = on_create_queue;
-    b->rx_vtbl.transmit_start = on_transmit_start;
-    b->rx_vtbl.interrupt = on_interrupt;
     b->st = st;
     return SYS_ERR_OK;
 }
@@ -237,30 +125,18 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         flags, struct capref* caps, size_t caps_len, char** args, size_t
         args_len, iref_t* dev) {
 
-    struct zynqmp_gem_state *st;
-    st = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
-    st->initialized = false;
-    st->service_name = "zynqmp_gem";
-
     errval_t err;
-    lvaddr_t vbase;
-    ZYNQMP_GEM_DEBUG("Map device capability.\n");
-    err = map_device_cap(caps[0], &vbase);
-    assert(err_is_ok(err) && vbase);
-    ZYNQMP_GEM_DEBUG("Device capability mapped.\n");
+    lvaddr_t va;
 
-    ZYNQMP_GEM_DEBUG("Init hardware.\n");
-    zynqmp_gem_hardware_init((mackerel_addr_t)vbase);
-    ZYNQMP_GEM_DEBUG("Hardware initialized.\n");
+    state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
+    state->initialized = false;
+    state->service_name = "zynqmp_gem";
 
-    //Enable interrupt
-    zynqmp_gem_inten_wr(&device, 0xFFFFFFFF);
+
 
     /* For use with the net_queue_manager */
 
-    ZYNQMP_GEM_DEBUG("Init management interface.\n");
     zynqmp_gem_init_mngif(st);
-    ZYNQMP_GEM_DEBUG("Management interface initialized.\n");
     
     return SYS_ERR_OK;
 }

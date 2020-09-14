@@ -143,7 +143,7 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
     struct zynqmp_cni_state *st;
     st = (struct zynqmp_cni_state*)malloc(sizeof(struct zynqmp_cni_state));
     st->service_name = "zynqmp_cni";
-	st->initialized = false;
+    st->initialized = false;
 	st->controller_ready = false;
 
     errval_t err;
@@ -156,8 +156,8 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
 	assert(err);
 	err = get_ram_cap(SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE, &frame);
 	vspace_map_one_frame_attr(&msg_vbase, SHARED_REGION_CNI_MSG_SIZE, frame, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    zynqmp_cni_init((mackerel_addr_t)reg_vbase, msg_vbase);
-	st->msg_vbase = msg_vbase;
+    st->msg_vbase = msg_vbase;
+    zynqmp_cni_init((mackerel_addr_t)reg_vbase);
 
     //Enable interrupt
 	zynqmp_cni_inten_wr(&device, 0xffffffff);
