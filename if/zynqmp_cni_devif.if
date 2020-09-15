@@ -19,6 +19,7 @@ interface zynqmp_cni_devif "zynqmp_cni devif communication interface" {
 	message read_rx_msg_request(uint32 slot);
 	message read_rx_msg_response(String msg[256]);
 	message check_controller_lifesign_request();
+	message check_controller_lifesign_response(uint32 lifesign);
 	message update_host_lifesign(uint32 lifesign);
 };
 
