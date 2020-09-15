@@ -22,7 +22,6 @@
 #include <driverkit/driverkit.h>
 
 #include "zynqmp_gem_debug.h"
-#include "zynqmp_gem_desc.h"
 #include "zynqmp_gem.h"
 
 static zynqmp_gem_t device;

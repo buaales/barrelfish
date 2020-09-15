@@ -95,6 +95,7 @@
                "sfn5122f",
                "sfn5122f_devif",
                "e1000_devif",
+               "zynqmp_cni_devif",
                "zynqmp_gem_devif",
                "descq",
                "ddomain",

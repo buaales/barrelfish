@@ -26,6 +26,6 @@ struct zynqmp_gem_state {
     char *service_name;
 };
 
-void foo();
+void foo(void);
 
 #endif //ZYNQ_GEM_H

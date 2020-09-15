@@ -14,7 +14,7 @@
  * specific part connects to it
  */
 
-interface zynqmp_gem_devif "zynqmp_gem devif communication interface" {
+interface zynqmp_cni_devif "zynqmp_cni devif communication interface" {
 	message push_tx_msg(uint32 slot, String msg[256]);
 	message read_rx_msg_request(uint32 slot);
 	message read_rx_msg_response(String msg[256]);

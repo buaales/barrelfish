@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <mm/mm.h>
 #include <if/monitor_blocking_defs.h>
+#include "ram_caps.h"
+#include "zynqmp_gem_debug.h"
 
 static struct mm register_manager;
 
@@ -20,7 +22,7 @@ static struct mm register_manager;
  **/
 errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* frame) 
 {
-    ZYNQMP_CNI_DEBUG("map_device_register: %"PRIxLPADDR" %zu %u\n", address, size, log2ceil(size));
+    ZYNQMP_GEM_DEBUG("map_device_register: %"PRIxLPADDR" %zu %u\n", address, size, log2ceil(size));
 
     struct allocated_range {
         struct capref cr;
@@ -40,13 +42,13 @@ errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* frame)
                                   frame, NULL);
     if (err_is_fail(err)) {
         // TODO(gz) Is there a better way to handle duplicated allocations?
-        ZYNQMP_CNI_DEBUG("mm_alloc_range failed.\n");
-        ZYNQMP_CNI_DEBUG("Do we already have an allocation that covers this range?\n");
+        ZYNQMP_GEM_DEBUG("mm_alloc_range failed.\n");
+        ZYNQMP_GEM_DEBUG("Do we already have an allocation that covers this range?\n");
         struct allocated_range* iter = allocation_head;
         while (iter != NULL) {
             if (address >= iter->id.base && 
                 (address + size <= (iter->id.base + iter->id.bytes))) {
-                ZYNQMP_CNI_DEBUG("Apparently, yes. We try to map that one.\n");
+                ZYNQMP_GEM_DEBUG("Apparently, yes. We try to map that one.\n");
                 *frame = iter->cr;                
                 return SYS_ERR_OK;
             }
@@ -112,6 +114,6 @@ errval_t init_ram_caps_manager(void)
         return err_push(err, MM_ERR_MM_INIT);
     }
  
-    ZYNQMP_CNI_DEBUG("init_cap_manager DONE\n");
+    ZYNQMP_GEM_DEBUG("init_cap_manager DONE\n");
     return SYS_ERR_OK;
 }

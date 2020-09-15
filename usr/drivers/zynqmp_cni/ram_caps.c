@@ -7,6 +7,9 @@
 #include <mm/mm.h>
 #include <if/monitor_blocking_defs.h>
 
+#include "ram_caps.h"
+#include "zynqmp_cni_debug.h"
+
 static struct mm register_manager;
 
 /**

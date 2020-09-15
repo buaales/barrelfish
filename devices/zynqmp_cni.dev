@@ -3,15 +3,15 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
   register cs_gtime ro addr(base, 0x0) "c state global time" type(uint32);
   
   constants dmc "deferred mode change" {
-    noreq	=   0b000    "no deferred mode change request";
-    app1	=   0b001    "change to app mode 1";
-    app2	=   0b010    "change to app mode 2";
+    dmc_noreq	=   0b000    "no deferred mode change request";
+    dmc_app1	=   0b001    "change to app mode 1";
+    dmc_app2	=   0b010    "change to app mode 2";
   };
   constants cm "cluster mode" {
-    invalid	=   0b000   "invalid";
-    app1	=   0b001   "application mode 1";
-    app2	=   0b010   "application mode 2";
-    cs		=   0b111   "cold start mode";
+    cm_invalid	=   0b000   "invalid";
+    cm_app1	=   0b001   "application mode 1";
+    cm_app2	=   0b010   "application mode 2";
+    cm_cs		=   0b111   "cold start mode";
   };
   register cs_mode ro addr(base, 0x4) "c state mode" {
 	_		5	rsvd;
@@ -27,19 +27,19 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
   register clkcrr ro addr(base, 0xc) "clock status correction term" type(uint32);
 
   constants ps "protocol state" {
-    freeze	=   0b0000;
-    init	=   0b0001;
-    listen	=   0b0010;
-    cs		=   0b0011	"cold start";
-	active  =	0b0100;
-	passive	=	0b0101;
-	await	=	0b0110;
-	test	=	0b0111;
-	dl		=	0b1000	"download";
-	err		=	0b1001	"error";
+    ps_freeze	=   0b0000;
+    ps_init	=   0b0001;
+    ps_listen	=   0b0010;
+    ps_cs		=   0b0011	"cold start";
+	ps_active  =	0b0100;
+	ps_passive	=	0b0101;
+	ps_await	=	0b0110;
+	ps_test	=	0b0111;
+	ps_dl		=	0b1000	"download";
+	ps_err		=	0b1001	"error";
   };
 
-  register stat ro addr(base 0x10) "status" {
+  register stat ro addr(base, 0x10) "status" {
     _		11	rsvd;
 	ce		1	"clique error";
 	se		1	"synchronization error";
@@ -54,7 +54,7 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
 	_		3	rsvd;
 	mc		1	"medl crc error";
 	ps		4	type(ps)	"protocol state";
-  }
+  };
 
   register scdid ro addr(base, 0x14) "schedule id" type(uint32);
 
@@ -63,13 +63,13 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
   register lname ro addr(base, 0x1c) "logical name" {
     sp		16	"slot position";
 	mid		16	"multiplexed id";
-  }
+  };
   
   register clife ro addr(base, 0x20) "controller lifesign" type(uint32);
 
-  register ctime ro addr(base 0x24) "cluster time" type(uint32);
+  register ctime ro addr(base, 0x24) "cluster time" type(uint32);
 
-  register intstat rw addr(base 0x28) "interrupt status" {
+  register intstat rw addr(base, 0x28) "interrupt status" {
     _		15	rsvd;
 	ti		1	"timer interrupt";
 	_		5	rsvd;
@@ -81,24 +81,24 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
 	he		1	"host error";
 	pe		1	"protocol error";
 	br		1	"BIST(built in self test) error";
-  }
+  };
   
   constants mcr "mode change request" {
-    noreq	=	0b000	"no mode change request";
-	req1	=	0b001	"set deferred mode change request field to req1";
-	req2	=	0b010	"set deferred mode change request field to req2";
-    reset	=   0b100   "clear deferred mode change request field";
-  }
+    mcr_noreq	=	0b000	"no mode change request";
+	mcr_req1	=	0b001	"set deferred mode change request field to req1";
+	mcr_req2	=	0b010	"set deferred mode change request field to req2";
+    mcr_reset	=   0b100   "clear deferred mode change request field";
+  };
 
   
-  regsiter msg_stat ro addr(base 0x2c) "message area status" {
+  register msg_stat ro addr(base, 0x2c) "message area status" {
 	_		30	rsvd;
-	rxen	1	"rx area accessable"
+	rxen	1	"rx area accessable";
     txen	1	"tx area accessable";
-  }
+  };
 
-  register ctrl rw addr(base 0x30) "control register" {
-    _		26	rsvd;
+  register ctrl rw addr(base, 0x30) "control register" {
+    _		23	rsvd;
 	ten		1	"timer enable";
 	_		1	rsvd;
 	mcr		3	"mode change request";
@@ -106,22 +106,22 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
 	bist	1	"built in self test";
 	ca		1	"controller await";
     co		1	"controller on";
-  }
+  };
 
-  register hlife rw addr(base 0x34) "host lifesign" type(uint32);
+  register hlife rw addr(base, 0x34) "host lifesign" type(uint32);
 
-  register erct rw addr(base 0x38) "externel rate correction term" type(uint32);
+  register erct rw addr(base, 0x38) "externel rate correction term" type(uint32);
 
   constants	tm	"timer mode" {
     once	=	0b0;
 	repeat	=	0b1;
-  }
-  register timer rw addr(base 0x3c) "timer" {
+  };
+  register timer rw addr(base, 0x3c) "timer" {
     tm		1	type(tm)	"timer mode";
 	value	31	"timer value in macrotick";
-  }
+  };
 
-  register inten rw addr(base 0x40) "interrupt enable" {
+  register inten rw addr(base, 0x40) "interrupt enable" {
 	_		15	rsvd;
 	tie		1	"timer interrupt enable";
 	_		5	rsvd;
@@ -133,10 +133,10 @@ device zynqmp_cni msbfirst ( addr base ) "communication network interface"
 	hee		1	"host error enable";
 	pee		1	"protocol error enable";
 	bre		1	"BIST error enable";
-  }
+  };
 
-  regsiter tocnt rw addr(base 0x44) "timer overflow counter" type(uint32);
+  register tocnt rw addr(base, 0x44) "timer overflow counter" type(uint32);
 
-  register tstart rw addr(base 0x48) "time startup" type(uint32);
+  register tstart rw addr(base, 0x48) "time startup" type(uint32);
 
 };

@@ -59,6 +59,7 @@
            "ohci",
            "pc16550d",
            "rtl8029as",
+           "zynqmp_cni",
            "zynqmp_gem",
            -- "rtl8169",
            "tulip",

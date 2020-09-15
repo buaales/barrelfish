@@ -7,10 +7,11 @@
 
 [ 
   build library { target = "devif_backend_zynqmp_gem",
-    cFiles = [ "devif_backend_zynqmp_gem.c"],
+    cFiles = [ "devif_backend_zynqmp_gem.c", "ram_caps.c"],
     flounderBindings = [ "zynqmp_gem_devif"],
     flounderDefs = [ "zynqmp_gem_devif" ],
     mackerelDevices = [ "zynqmp_gem"],
+    addLibraries = ["mm"],
     addCFlags = [ "-D ZYNQMP_GEM_DEBUG_ON" ]
   },
   build library { target = "zynqmp_gem_module",

@@ -32,14 +32,13 @@ static errval_t zynqmp_gem_register(struct devq* q, struct capref cap,
                                   regionid_t rid)
 {    
     zynqmp_gem_queue_t *q_ext = (zynqmp_gem_queue_t *)q;
-    struct frame_identity id;
     errval_t err;
-    lvaddr_t va;
+    void *va;
     
     q_ext->region = cap;
     q_ext->rid = rid;
     err = vspace_map_one_frame_attr(&va, ZYNQMP_GEM_N_BUFS * ZYNQMP_GEM_FRAMESIZE, cap, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL); 
-    q_ext->region_base = va;
+    q_ext->region_base = (lvaddr_t)va;
 
     return SYS_ERR_OK;
 }
@@ -87,23 +86,23 @@ static errval_t zynqmp_gem_dequeue_rx(zynqmp_gem_queue_t *q, regionid_t* rid,
     
     // make sure shared rx tail goes first.
     uint32_t shared_region_head, shared_region_tail;
-    shared_region_head = (uint32_t*)(q->shared_vars_base)[3];
-    shared_region_tail = (uint32_t*)(q->shared_vars_base)[4];
+    shared_region_head = ((uint32_t*)q->shared_vars_base)[3];
+    shared_region_tail = ((uint32_t*)q->shared_vars_base)[4];
     if (shared_region_head == shared_region_tail) {
         return DEVQ_ERR_QUEUE_EMPTY;
     }
-    memcpy(rx_addrs[q->rx_head], q->shared_rx_base + q->rx_head * ZYNQMP_GEM_BUFSIZE, ZYNQMP_GEM_FRAMESIZE);
+    memcpy((void*)rx_addrs[q->rx_head], (void*)(q->shared_rx_base + q->rx_head * ZYNQMP_GEM_BUFSIZE), ZYNQMP_GEM_FRAMESIZE);
     
-    *rid = q->region_id;
+    *rid = q->rid;
     *offset = rx_addrs[q->rx_head];
-    *length = ZYNQMP_GEM_RX_FRAMESIZE;
+    *length = ZYNQMP_GEM_FRAMESIZE;
     *valid_data = 0;
-    *valid_length = ZYNQMP_GEM_RX_FRAMESIZE;
+    *valid_length = ZYNQMP_GEM_FRAMESIZE;
     *flags = NETIF_RXFLAG;
 
     q->rx_head = (q->rx_head + 1) % ZYNQMP_GEM_N_BUFS; 
 
-    (uint32_t*)(q->shared_vars_base)[3] = q->rx_head;
+    ((uint32_t*)q->shared_vars_base)[3] = q->rx_head;
     return SYS_ERR_OK;
 }
 
@@ -121,14 +120,13 @@ static errval_t zynqmp_gem_enqueue_tx(zynqmp_gem_queue_t *q, regionid_t rid,
     assert(length <= ZYNQMP_GEM_FRAMESIZE);
 
     // q tx tail goes first, shared tx tail updates afterwards.
-    memcpy(q->shared_tx_base + q->tx_tail * ZYNQMP_GEM_BUFSIZE, tx_addrs[q->tx_tail], length);
+    memcpy((void*)(q->shared_tx_base + q->tx_tail * ZYNQMP_GEM_BUFSIZE), (void*)tx_addrs[q->tx_tail], length);
 
     q->tx_tail = (q->tx_tail + 1) % ZYNQMP_GEM_N_BUFS;
 
-    errval_t err = SYS_ERR_OK;
     if (flags & NETIF_TXFLAG_LAST) {
-        (uint32_t*)(q->shared_vars_base)[2] = q->tx_tail;
-        q->isr();
+        ((uint32_t*)q->shared_vars_base)[2] = q->tx_tail;
+        q->isr(q);
     }
 
     return SYS_ERR_OK;
@@ -211,6 +209,7 @@ static errval_t zynqmp_gem_notify(struct devq* q)
 
 static errval_t zynqmp_gem_destroy(struct devq * q)
 {
+    errval_t err;
     zynqmp_gem_queue_t* q_ext = (zynqmp_gem_queue_t *) q;
     err = vspace_unmap((void*)q_ext->region_base);
     assert(err_is_ok(err));
@@ -251,8 +250,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
 {
     errval_t err;
     zynqmp_gem_queue_t *q;
-    int i;
-    lvaddr_t va;
+    void *va;
     struct capref tmp;
 
     ZYNQMP_GEM_DEBUG("zynqmp gem queue create called.\n");
@@ -273,7 +271,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     assert(err);
     vspace_map_one_frame_attr(&va, 0x1000, tmp, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->mac_address = *(uint64_t*)va;
-    err = vspace_unmap((void*)va);
+    err = vspace_unmap(va);
     assert(err_is_ok(err));
     err = cap_delete(tmp);
     assert(err_is_ok(err));
@@ -281,15 +279,15 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     err = get_ram_cap(SHARED_REGION_VARIABLES_BASE, 0x1000, &(q ->shared_vars_region));
     assert(err);
     vspace_map_one_frame_attr(&va, 0x1000, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_vars_base = va;
+    q->shared_vars_base = (lvaddr_t)va;
     err = get_ram_cap(SHARED_REGION_ETH_RX_BASE, 0x10000, &(q->shared_rx_region));
     assert(err);
     vspace_map_one_frame_attr(&va, 0x10000, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_rx_base = va;
+    q->shared_rx_base = (lvaddr_t)va;
     err = get_ram_cap(SHARED_REGION_ETH_TX_BASE, 0x10000, &(q->shared_tx_region));
     assert(err);
     vspace_map_one_frame_attr(&va, 0x10000, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_tx_base = va;
+    q->shared_tx_base = (lvaddr_t)va;
 
     char service[128] = "zynqmp_gem_devif";
     iref_t iref;
