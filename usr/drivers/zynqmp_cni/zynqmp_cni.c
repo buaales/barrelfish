@@ -56,14 +56,14 @@ static void tx_read_rx_msg_response_cb(void *a) {
 }
 
 static void tx_read_rx_msg_response(struct zynqmp_cni_state* st) {
-    struct event_closure txcont = MKCONT(tx_read_rx_msg_response_cb, st->binding);
+    struct event_closure txcont = MKCONT(tx_read_rx_msg_response_cb, (void*)st->binding);
     err = zynqmp_cni_devif_read_rx_msg_response__tx(st->binding, txcont, msg);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT(tx_read_rx_msg_response, st->binding);
+            txcont = MKCONT(tx_read_rx_msg_response, (void*)st->binding);
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -81,14 +81,14 @@ static void tx_check_controller_lifesign_response_cb(void *a) {
 }
 
 static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign) {
-    struct event_closure txcont = MKCONT(tx_check_controller_lifesign_response_cb, st->binding);
+    struct event_closure txcont = MKCONT(tx_check_controller_lifesign_response_cb, (void*)st->binding);
     err = zynqmp_cni_devif_check_controller_lifesign_response__tx(st->binding, txcont, lifesign);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT(tx_check_controller_lifesign_response, st->binding);
+            txcont = MKCONT(tx_check_controller_lifesign_response, (void*)st->binding);
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time

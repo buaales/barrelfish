@@ -11,6 +11,6 @@ void ttpc_read_msg(uint32_t slot, char* dest);
 
 void ttpc_update_host_lifesign(uint32_t lifesign);
 
-uint32_t ttpc_check_controller_lifesign();
+uint32_t ttpc_check_controller_lifesign(void);
 
-void ttpc_init();
+void ttpc_init(void);
