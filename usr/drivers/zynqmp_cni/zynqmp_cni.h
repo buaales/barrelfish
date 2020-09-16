@@ -30,7 +30,7 @@ struct zynqmp_cni_state {
 
 	/* For use with the net_queue_manager */
 	char *service_name;
-	struct zynqmp_cni_devif_binding binding;
+	struct zynqmp_cni_devif_binding *binding;
 };
 
 #endif

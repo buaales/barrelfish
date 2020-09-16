@@ -24,13 +24,9 @@
 #include "zynqmp_gem_debug.h"
 #include "zynqmp_gem.h"
 
-static zynqmp_gem_t device;
-static struct zynqmp_gem_state* state;
-
-void foo() {
-
+void foo(void) {
+    printf("foo\n");
 }
-
 
 /*
 static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b,
@@ -107,7 +103,7 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 static errval_t connect_devif_cb(void *st, struct zynqmp_gem_devif_binding *b)
 {
-    b->rx_vtbl.create_queue_call = on_create_queue;
+    //b->rx_vtbl.create_queue_call = on_create_queue;
     b->st = st;
     return SYS_ERR_OK;
 }
@@ -124,10 +120,7 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         flags, struct capref* caps, size_t caps_len, char** args, size_t
         args_len, iref_t* dev) {
 
-    errval_t err;
-    lvaddr_t va;
-
-    state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
+    struct zynqmp_gem_state *state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
     state->initialized = false;
     state->service_name = "zynqmp_gem";
 
@@ -135,7 +128,7 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
 
     /* For use with the net_queue_manager */
 
-    zynqmp_gem_init_mngif(st);
+    zynqmp_gem_init_mngif(state);
     
     return SYS_ERR_OK;
 }

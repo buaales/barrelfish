@@ -50,6 +50,7 @@
  */
 int main(int argc, char** argv)
 {
+    foo();
     iref_t kaluga_iref = 0;
     errval_t err = nameservice_blocking_lookup("ddomain_controller", &kaluga_iref);
     assert(err_is_ok(err));

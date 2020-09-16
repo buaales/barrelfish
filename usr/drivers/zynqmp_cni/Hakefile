@@ -10,6 +10,7 @@
     cFiles = [ "zynqmp_cni.c", "ram_caps.c" ],
     flounderBindings = [ "zynqmp_cni_devif" ],
     flounderDefs = [ "zynqmp_cni_devif" ],
+    addLibraries = ["mm"],
     mackerelDevices = [ "zynqmp_cni" ],
     architectures = [ "armv8" ],
     addCFlags = [ "-DLIBRARY", "-D ZYNQMP_GEM_DEBUG_ON" ]

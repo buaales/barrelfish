@@ -8,7 +8,7 @@
 static bool flag;
 static struct ttpc_state *ttpc_state;
 
-static void rx_read_rx_msg_response(struct zynqmp_cni_devif_binding *b, char *p_msg)
+static void rx_read_rx_msg_response(struct zynqmp_cni_devif_binding *b, const char *p_msg)
 {
 	struct ttpc_state *state = (struct ttpc_state*)b->st;
 	state->p_cni_msg = p_msg;
@@ -39,14 +39,14 @@ static void tx_push_tx_msg_cb(void *a) {
 
 static void tx_push_tx_msg(struct ttpc_state *st, uint32_t slot, char *p_msg) {
 	errval_t err;
-	struct event_closure txcont = MKCONT(tx_push_tx_msg_cb, (void*)st->binding);
+	struct event_closure txcont = MKCONT((void (*)(void *))tx_push_tx_msg_cb, (void*)(st->binding));
 	err = zynqmp_cni_devif_push_tx_msg__tx(st->binding, txcont, slot, p_msg);
 
 	if (err_is_fail(err)) {
 		if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
 			debug_printf("tx_push_tx_msg again\n");
 			struct waitset* ws = get_default_waitset();
-			txcont = MKCONT(tx_push_tx_msg, (void*)st->binding);
+			txcont = MKCONT((void (*)(void *))tx_push_tx_msg, (void*)(st->binding));
 			err = st->binding->register_send(st->binding, ws, txcont);
 			if (err_is_fail(err)) {
 				// note that only one continuation may be registered at a time
@@ -65,14 +65,14 @@ static void tx_read_rx_msg_request_cb(void* a) {
 
 static void tx_read_rx_msg_request(struct ttpc_state *st, uint32_t slot) {
 	errval_t err;
-	struct event_closure txcont = MKCONT(tx_read_rx_msg_request_cb, (void*)st->binding);
+	struct event_closure txcont = MKCONT((void (*)(void *))tx_read_rx_msg_request_cb, (void*)(st->binding));
 	err = zynqmp_cni_devif_read_rx_msg_request__tx(st->binding, txcont, slot);
 
 	if (err_is_fail(err)) {
 		if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
 			debug_printf("tx_read_rx_msg_request again\n");
 			struct waitset* ws = get_default_waitset();
-			txcont = MKCONT(tx_read_rx_msg_request, (void*)st->binding);
+			txcont = MKCONT((void (*)(void *))tx_read_rx_msg_request, (void*)(st->binding));
 			err = st->binding->register_send(st->binding, ws, txcont);
 			if (err_is_fail(err)) {
 				// note that only one continuation may be registered at a time
@@ -91,13 +91,13 @@ static void tx_update_host_lifesign_cb(void* a) {
 
 static void tx_update_host_lifesign(struct ttpc_state* st, uint32_t lifesign) {
 	errval_t err;
-	struct event_closure txcont = MKCONT(tx_update_host_lifesign_cb, (void*)st->binding);
+	struct event_closure txcont = MKCONT((void (*)(void *))tx_update_host_lifesign_cb, (void*)(st->binding));
 	err = zynqmp_cni_devif_update_host_lifesign__tx(st->binding, txcont, lifesign);
 	if (err_is_fail(err)) {
 		if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
 			debug_printf("tx_update_host_lifesign again\n");
 			struct waitset* ws = get_default_waitset();
-			txcont = MKCONT(tx_update_host_lifesign, (void*)st->binding);
+			txcont = MKCONT((void (*)(void *))tx_update_host_lifesign, (void*)(st->binding));
 			err = st->binding->register_send(st->binding, ws, txcont);
 			if (err_is_fail(err)) {
 				// note that only one continuation may be registered at a time
@@ -116,14 +116,14 @@ static void tx_check_controller_lifesign_request_cb(void *a) {
 
 static void tx_check_controller_lifesign_request(struct ttpc_state *st) {
 	errval_t err;
-	struct event_closure txcont = MKCONT(tx_check_controller_lifesign_request_cb, (void*)st->binding);
+	struct event_closure txcont = MKCONT((void (*)(void *))tx_check_controller_lifesign_request_cb, (void*)(st->binding));
 	err = zynqmp_cni_devif_check_controller_lifesign_request__tx((void*)st->binding, txcont);
 
 	if (err_is_fail(err)) {
 		if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
 			debug_printf("tx_check_controller_lifesign_request again\n");
 			struct waitset* ws = get_default_waitset();
-			txcont = MKCONT(tx_check_controller_lifesign_request, (void*)st->binding);
+			txcont = MKCONT((void (*)(void *))tx_check_controller_lifesign_request, (void*)(st->binding));
 			err = st->binding->register_send((void*)st->binding, ws, txcont);
 			if (err_is_fail(err)) {
 				// note that only one continuation may be registered at a time
@@ -151,14 +151,14 @@ void ttpc_update_host_lifesign(uint32_t lifesign) {
 	tx_update_host_lifesign(ttpc_state, lifesign);
 }
 
-uint32_t ttpc_check_controller_lifesign() {
+uint32_t ttpc_check_controller_lifesign(void) {
 	flag = 0;
 	tx_check_controller_lifesign_request(ttpc_state);
 	while (!flag);
 	return ttpc_state->controller_lifesign;
 }
 
-errval_t ttpc_init()
+errval_t ttpc_init(void)
 {
 	errval_t err;
 	char service[128] = "zynqmp_cni_devif";

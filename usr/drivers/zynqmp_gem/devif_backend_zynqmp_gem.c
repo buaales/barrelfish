@@ -27,7 +27,6 @@
 lvaddr_t tx_addrs[ZYNQMP_GEM_N_BUFS] = { 0 };
 lvaddr_t rx_addrs[ZYNQMP_GEM_N_BUFS] = { 0 };
 
-
 static errval_t zynqmp_gem_register(struct devq* q, struct capref cap,
                                   regionid_t rid)
 {    

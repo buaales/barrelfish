@@ -15,6 +15,10 @@
 
 #include <driverkit/driverkit.h>
 
+#include <if/zynqmp_cni_devif_defs.h>
+
+#include <dev/zynqmp_cni_dev.h>
+
 #include "zynqmp_cni_debug.h"
 #include "zynqmp_cni.h"
 #include "ram_caps.h"
@@ -22,23 +26,25 @@
 static zynqmp_cni_t device;
 static char msg[256];
 
+static void tx_read_rx_msg_response(struct zynqmp_cni_state* st);
+static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign);
+
 static void zynqmp_cni_init(mackerel_addr_t reg_vbase) {
-	lifesign = 1;
     zynqmp_cni_initialize(&device, reg_vbase);
 
-	zynqmp_cni_ctrl_bist_wr(&device, 0x1);
-	zynqmp_cni_ctrl_co_wr(&device, 0x1);
+	// zynqmp_cni_ctrl_wr(&device, zynqmp_cni_ctrl_bist_insert(0, 0x1));
+	zynqmp_cni_ctrl_wr(&device, zynqmp_cni_ctrl_co_insert(0, 0x1));
 }
 
-static void rx_push_tx_msg(struct zynqmp_cni_devif_binding* b, uint32_t slot, char* p_msg) {
+static void rx_push_tx_msg(struct zynqmp_cni_devif_binding* b, uint32_t slot, const char* p_msg) {
 	struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
 	memcpy((void*)(state->msg_vbase + slot * CNI_MSG_SLOT_SIZE), p_msg, CNI_MSG_SLOT_SIZE);
 }
 
-static void rx_read_rx_msg_request(struct zynqmp_cni_defif_binding* b, uint32_t slot) {
+static void rx_read_rx_msg_request(struct zynqmp_cni_devif_binding* b, uint32_t slot) {
 	struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
-	memcpy(msg, (void*)(state->msg_vbase + slot * CNI_MSG_SLOT_SIZE, 256);
-	tx_read_rx_msg_response(st);
+	memcpy(msg, (void*)(state->msg_vbase + slot * CNI_MSG_SLOT_SIZE), 256);
+	tx_read_rx_msg_response(state);
 }
 
 static void rx_update_host_lifesign(struct zynqmp_cni_devif_binding* b, uint32_t lifesign) {
@@ -48,22 +54,23 @@ static void rx_update_host_lifesign(struct zynqmp_cni_devif_binding* b, uint32_t
 static void rx_check_controller_lifesign_request(struct zynqmp_cni_devif_binding* b) {
     struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
     uint32_t lifesign = zynqmp_cni_clife_rd(&device);
-    tx_check_controller_lifesign_response(st, lifesign);
+    tx_check_controller_lifesign_response(state, lifesign);
 }
 
 static void tx_read_rx_msg_response_cb(void *a) {
-    ZYNQMP_GEM_DEBUG("tx_read_rx_msg_response done.")
+    ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response done.");
 }
 
 static void tx_read_rx_msg_response(struct zynqmp_cni_state* st) {
-    struct event_closure txcont = MKCONT(tx_read_rx_msg_response_cb, (void*)st->binding);
+    errval_t err;
+    struct event_closure txcont = MKCONT((void (*)(void *))tx_read_rx_msg_response_cb, (void*)(st->binding));
     err = zynqmp_cni_devif_read_rx_msg_response__tx(st->binding, txcont, msg);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_CNI_DEBUG("tx_read_rx_msg_response again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT(tx_read_rx_msg_response, (void*)st->binding);
+            txcont = MKCONT((void (*)(void *))tx_read_rx_msg_response, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -77,18 +84,19 @@ static void tx_read_rx_msg_response(struct zynqmp_cni_state* st) {
 }
 
 static void tx_check_controller_lifesign_response_cb(void *a) {
-    ZYNQMP_GEM_DEBUG("tx_check_controller_lifesign_response done.")
+    ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response done.");
 }
 
 static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign) {
-    struct event_closure txcont = MKCONT(tx_check_controller_lifesign_response_cb, (void*)st->binding);
+    errval_t err;
+    struct event_closure txcont = MKCONT((void (*)(void *))tx_check_controller_lifesign_response_cb, (void*)(st->binding));
     err = zynqmp_cni_devif_check_controller_lifesign_response__tx(st->binding, txcont, lifesign);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT(tx_check_controller_lifesign_response, (void*)st->binding);
+            txcont = MKCONT((void (*)(void *))tx_check_controller_lifesign_response, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -119,12 +127,13 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 static errval_t connect_devif_cb(void *st, struct zynqmp_cni_devif_binding *b)
 {
-	st->binding = b;
+        struct zynqmp_cni_state *state = (struct zynqmp_cni_state*)st;
+	state->binding = b;
 	b->rx_vtbl.push_tx_msg = rx_push_tx_msg;
 	b->rx_vtbl.read_rx_msg_request = rx_read_rx_msg_request;
     b->rx_vtbl.update_host_lifesign = rx_update_host_lifesign;
     b->rx_vtbl.check_controller_lifesign_request = rx_check_controller_lifesign_request;
-	b->st = st;
+	b->st = state;
 	return SYS_ERR_OK;
 }
 
@@ -141,13 +150,14 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         args_len, iref_t* dev) {
 
     struct zynqmp_cni_state *st;
+    void *va;
     st = (struct zynqmp_cni_state*)malloc(sizeof(struct zynqmp_cni_state));
     st->service_name = "zynqmp_cni";
     st->initialized = false;
 	st->controller_ready = false;
 
     errval_t err;
-    lvaddr_t reg_vbase, msg_vbase;
+    lvaddr_t reg_vbase;
 	struct capref frame;
     ZYNQMP_CNI_DEBUG("Map device capability.\n");
     err = map_device_cap(caps[0], &reg_vbase);
@@ -155,8 +165,8 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
 	err = init_ram_caps_manager();
 	assert(err);
 	err = get_ram_cap(SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE, &frame);
-	vspace_map_one_frame_attr(&msg_vbase, SHARED_REGION_CNI_MSG_SIZE, frame, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    st->msg_vbase = msg_vbase;
+	vspace_map_one_frame_attr(&va, SHARED_REGION_CNI_MSG_SIZE, frame, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    st->msg_vbase = (lvaddr_t)va;
     zynqmp_cni_init((mackerel_addr_t)reg_vbase);
 
     //Enable interrupt
@@ -165,7 +175,7 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
     /* For use with the net_queue_manager */
 
     ZYNQMP_CNI_DEBUG("Init management interface.\n");
-    zynqmp_gem_init_mngif(st);
+    zynqmp_cni_init_mngif(st);
     ZYNQMP_CNI_DEBUG("Management interface initialized.\n");
     
     return SYS_ERR_OK;

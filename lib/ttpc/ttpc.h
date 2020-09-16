@@ -1,5 +1,9 @@
+#ifndef __TTPC_H__
+#define __TTPC_H__
+
+#include <barrelfish/barrelfish.h>
 struct ttpc_state {
-	char* p_cni_msg;
+	const char* p_cni_msg;
 	uint32_t controller_lifesign;
 
 	struct zynqmp_cni_devif_binding *binding;
@@ -13,4 +17,6 @@ void ttpc_update_host_lifesign(uint32_t lifesign);
 
 uint32_t ttpc_check_controller_lifesign(void);
 
-void ttpc_init(void);
+errval_t ttpc_init(void);
+
+#endif
