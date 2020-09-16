@@ -239,16 +239,16 @@ static void tx_create_queue_call_cb(void* a) {
     ZYNQMP_GEM_DEBUG("tx_create_queue_call done.");
 }
 
-static void tx_create_queue_call(struct zynqmp_gem_queue* st, struct capref vars_region) {
+static void tx_create_queue_call(struct zynqmp_gem_queue* st) {
     errval_t err;
-    struct event_closure txcont = MKCONT((void (*)(void*))tx_create_queue_call_cb, (void*)(st->binding), vars_region);
-    err = zynqmp_gem_devif_create_queue_call__tx(st->binding, txcont);
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_create_queue_call_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_create_queue_call__tx(st->binding, txcont, st->shared_vars_region);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_GEM_DEBUG("tx_create_queue_call again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT((void (*)(void*)tx_create_queue_call, (void*)(st->binding), vars_region);
+            txcont = MKCONT((void (*)(void*))tx_create_queue_call, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -267,7 +267,7 @@ static void bind_cb(void *st, errval_t err, struct zynqmp_gem_devif_binding *b)
     b->st = st;
     b->rx_vtbl.frame_polled = rx_frame_polled;
     
-    q->b = b;
+    q->binding = b;
     q->bound = true;
 }
 
@@ -332,7 +332,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
         event_dispatch(get_default_waitset());
     }
 
-    tx_create_queue_call(q, q->shared_vars_region);
+    tx_create_queue_call(q);
 
     if (err_is_fail(err)) {
         return err;

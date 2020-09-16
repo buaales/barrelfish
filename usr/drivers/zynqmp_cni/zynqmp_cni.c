@@ -54,6 +54,7 @@ static void rx_update_host_lifesign(struct zynqmp_cni_devif_binding* b, uint32_t
 static void rx_check_controller_lifesign_request(struct zynqmp_cni_devif_binding* b) {
     struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
     uint32_t lifesign = zynqmp_cni_clife_rd(&device);
+    st->controller_lifesign = lifesign;
     tx_check_controller_lifesign_response(state, lifesign);
 }
 
@@ -87,10 +88,10 @@ static void tx_check_controller_lifesign_response_cb(void *a) {
     ZYNQMP_CNI_DEBUG("tx_check_controller_lifesign_response done.");
 }
 
-static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign) {
+static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st) {
     errval_t err;
     struct event_closure txcont = MKCONT((void (*)(void *))tx_check_controller_lifesign_response_cb, (void*)(st->binding));
-    err = zynqmp_cni_devif_check_controller_lifesign_response__tx(st->binding, txcont, lifesign);
+    err = zynqmp_cni_devif_check_controller_lifesign_response__tx(st->binding, txcont, st->controller_lifesign);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {

@@ -33,7 +33,7 @@ typedef struct zynqmp_gem_queue {
 
     // binding
     bool bound;
-    struct zynqmp_gem_devif_binding* b;
+    struct zynqmp_gem_devif_binding* binding;
 } zynqmp_gem_queue_t;
 
 #endif

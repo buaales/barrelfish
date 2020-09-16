@@ -3,8 +3,14 @@
 
 #include <barrelfish/barrelfish.h>
 struct ttpc_state {
-	const char* p_cni_msg;
+	const char* cni_msg;
+	char* ttpc_msg;
+	uint32_t tx_slot;
+	uint32_t rx_slot;
 	uint32_t controller_lifesign;
+	uint32_t host_lifesign;
+
+	volatile bool mux_flag;
 
 	struct zynqmp_cni_devif_binding *binding;
 };

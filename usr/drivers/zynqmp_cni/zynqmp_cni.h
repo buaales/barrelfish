@@ -27,6 +27,7 @@ struct zynqmp_cni_state {
 	bool initialized;
 	bool controller_ready;
 	lvaddr_t msg_vbase;
+	uint32_t controller_lifesign;
 
 	/* For use with the net_queue_manager */
 	char *service_name;
