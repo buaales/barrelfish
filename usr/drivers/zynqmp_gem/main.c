@@ -50,7 +50,6 @@
  */
 int main(int argc, char** argv)
 {
-    foo();
     iref_t kaluga_iref = 0;
     errval_t err = nameservice_blocking_lookup("ddomain_controller", &kaluga_iref);
     assert(err_is_ok(err));
@@ -58,6 +57,7 @@ int main(int argc, char** argv)
     assert(err_is_ok(err));
 
     while(1) {
+        poll();
         err = event_dispatch(get_default_waitset());
         if (err_is_fail(err)) {
             USER_PANIC_ERR(err, "error in event_dispatch for messages_wait_and_handle_next hack");

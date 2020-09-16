@@ -230,16 +230,42 @@ static errval_t zynqmp_gem_destroy(struct devq * q)
     free(q_ext);
     return SYS_ERR_OK;
 }
-/*
-static void interrupt_handler(void* arg) {
-    zynqmp_gem_queue_t *q = (zynqmp_gem_queue_t*) arg;
-    q->int_handler(arg);
+
+static void rx_frame_polled(struct zynqmp_gem_devif_binding* b) {
+    struct zynqmp_gem_queue* q = b->st;
+    q->isr(q);
 }
- */
+static void tx_create_queue_call_cb(void* a) {
+    ZYNQMP_GEM_DEBUG("tx_create_queue_call done.");
+}
+
+static void tx_create_queue_call(struct zynqmp_gem_queue* st, struct capref vars_region) {
+    errval_t err;
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_create_queue_call_cb, (void*)(st->binding), vars_region);
+    err = zynqmp_gem_devif_create_queue_call__tx(st->binding, txcont);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_GEM_DEBUG("tx_create_queue_call again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT((void (*)(void*)tx_create_queue_call, (void*)(st->binding), vars_region);
+            err = st->binding->register_send(st->binding, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_GEM_DEBUG("tx_create_queue_call register failed!");
+            }
+        }
+        else {
+            ZYNQMP_GEM_DEBUG("tx_create_queue_call error\n");
+        }
+    }
+}
+
 static void bind_cb(void *st, errval_t err, struct zynqmp_gem_devif_binding *b)
 {
     zynqmp_gem_queue_t* q = (zynqmp_gem_queue_t*) st;
     b->st = st;
+    b->rx_vtbl.frame_polled = rx_frame_polled;
     
     q->b = b;
     q->bound = true;
@@ -305,6 +331,8 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     while(!q->bound) {
         event_dispatch(get_default_waitset());
     }
+
+    tx_create_queue_call(q, q->shared_vars_region);
 
     if (err_is_fail(err)) {
         return err;

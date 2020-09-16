@@ -24,30 +24,46 @@
 #include "zynqmp_gem_debug.h"
 #include "zynqmp_gem.h"
 
-void foo(void) {
-    printf("foo\n");
-}
+static struct zynqmp_gem_state* state;
 
-/*
-static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b,
-        struct capref rx, struct capref dummy_rx,
-        struct capref tx, struct capref dummy_tx) {
+
+static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b, struct capref shared_vars_region) {
     struct zynqmp_gem_state *state = b->st;
     lvaddr_t va;
 
-    err = vspace_map_one_frame_attr(&va, ZYNQMP_GEM_N_RX_BUFS * sizeof(rx_desc_t), rx, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    state->vars_cap = shared_vars_region;
+    err = vspace_map_one_frame_attr(&va, 0x1000, shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     assert(err_is_ok(err));
-    state->rx_descq = (rx_desc_t*)va;
-
-    err = vspace_map_one_frame_attr(&va, ZYNQMP_GEM_N_TX_BUFS * sizeof(tx_desc_t), tx, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    assert(err_is_ok(err));
-    state->tx_descq = (tx_desc_t*)va;
-
-    tx_create_queue_response(state, state->mac);
-
-    return SYS_ERR_OK;
+    state->vars_base = (rx_desc_t*)va;
 }
 
+static void tx_frame_polled_cb(void* a) {
+    ZYNQMP_GEM_DEBUG("tx_frame_polled done.");
+}
+
+static void tx_frame_polled(struct zynqmp_gem_state* st) {
+    errval_t err;
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_frame_polled_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_frame_polled__tx(st->binding, txcont);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_GEM_DEBUG("tx_frame_polled again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT((void (*)(void*))tx_frame_polled, (void*)(st->binding));
+            err = st->binding->register_send(st->binding, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_GEM_DEBUG("tx_frame_polled register failed!");
+            }
+        }
+        else {
+            ZYNQMP_GEM_DEBUG("tx_frame_polled error\n");
+        }
+    }
+}
+
+/*
 static void rx_transmit_start(struct zynqmp_gem_devif_binding* b) {
     struct zynqmp_gem_state* state = b->st;
     uint32_t *p_tx_head = (uint32_t *)(state->vars_base + 0x4);
@@ -103,7 +119,7 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 static errval_t connect_devif_cb(void *st, struct zynqmp_gem_devif_binding *b)
 {
-    //b->rx_vtbl.create_queue_call = on_create_queue;
+    b->rx_vtbl.create_queue_call = rx_create_queue_call;
     b->st = st;
     return SYS_ERR_OK;
 }
@@ -120,7 +136,7 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         flags, struct capref* caps, size_t caps_len, char** args, size_t
         args_len, iref_t* dev) {
 
-    struct zynqmp_gem_state *state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
+    state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
     state->initialized = false;
     state->service_name = "zynqmp_gem";
 
@@ -180,6 +196,13 @@ static errval_t set_sleep_level(struct bfdriver_instance* bfi, uint32_t level) {
  */
 static errval_t destroy(struct bfdriver_instance* bfi) {
     return SYS_ERR_OK;
+}
+
+void poll(void) {
+    uint32_t head, tail;
+    head = ((uint32_t*)state->vars_base)[3];
+    tail = ((uint32_t*)state->vars_base)[4];
+    if (head == tail) tx_frame_polled(state);
 }
 
 /**
