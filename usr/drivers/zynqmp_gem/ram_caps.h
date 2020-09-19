@@ -9,8 +9,10 @@
 
 #ifndef DEVICE_CAPS_H
 #define DEVICE_CAPS_H
- 
-errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* devframe);
-errval_t init_ram_caps_manager(void);
+
+#include <barrelfish/core_state.h>
+#include <barrelfish/barrelfish.h>
+
+errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* retcap);
  
 #endif // DEVICE_CAPS_H
