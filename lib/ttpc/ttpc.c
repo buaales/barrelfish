@@ -88,7 +88,7 @@ static void tx_update_host_lifesign_cb(void* a) {
 	debug_printf("tx_update_host_lifesign done.");
 }
 
-static void tx_update_host_lifesign(struct ttpc_state* st, uint32_t lifesign) {
+static void tx_update_host_lifesign(struct ttpc_state* st) {
 	errval_t err;
 	struct event_closure txcont = MKCONT((void (*)(void *))tx_update_host_lifesign_cb, (void*)(st->binding));
 	err = zynqmp_cni_devif_update_host_lifesign__tx(st->binding, txcont, st->host_lifesign);
@@ -157,7 +157,7 @@ void ttpc_update_host_lifesign(uint32_t lifesign) {
 uint32_t ttpc_check_controller_lifesign(void) {
 	ttpc_state->mux_flag = 0;
 	tx_check_controller_lifesign_request(ttpc_state);
-	while (!ttpc_state->mux_flag = 0;);
+	while (!ttpc_state->mux_flag);
 	return ttpc_state->controller_lifesign;
 }
 
