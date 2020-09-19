@@ -24,6 +24,7 @@ struct zynqmp_gem_state {
 
     /* For use with the net_queue_manager */
     char *service_name;
+    zynqmp_gem_devif_binding* binding;
 };
 
 void poll(void);

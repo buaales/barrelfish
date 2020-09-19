@@ -24,17 +24,17 @@
 #include "zynqmp_gem_debug.h"
 #include "zynqmp_gem.h"
 
-static struct zynqmp_gem_state* state;
+static struct zynqmp_gem_state* gem_state;
 
 
 static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b, struct capref shared_vars_region) {
     struct zynqmp_gem_state *state = b->st;
-    lvaddr_t va;
+    void* va;
 
     state->vars_cap = shared_vars_region;
-    err = vspace_map_one_frame_attr(&va, 0x1000, shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    errval_t err = vspace_map_one_frame_attr(&va, 0x1000, shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     assert(err_is_ok(err));
-    state->vars_base = (rx_desc_t*)va;
+    state->vars_base = (lvaddr_t)va;
 }
 
 static void tx_frame_polled_cb(void* a) {
@@ -119,8 +119,11 @@ static void export_devif_cb(void *st, errval_t err, iref_t iref)
 
 static errval_t connect_devif_cb(void *st, struct zynqmp_gem_devif_binding *b)
 {
+    struct zynqmp_gem_state* state = (struct zynqmp_gem_state*)st;
     b->rx_vtbl.create_queue_call = rx_create_queue_call;
-    b->st = st;
+    b->st = state;
+    state->binding = b;
+    
     return SYS_ERR_OK;
 }
 
@@ -136,15 +139,15 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         flags, struct capref* caps, size_t caps_len, char** args, size_t
         args_len, iref_t* dev) {
 
-    state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
-    state->initialized = false;
-    state->service_name = "zynqmp_gem";
+    gem_state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
+    gem_state->initialized = false;
+    gem_state->service_name = "zynqmp_gem";
 
 
 
     /* For use with the net_queue_manager */
 
-    zynqmp_gem_init_mngif(state);
+    zynqmp_gem_init_mngif(gem_state);
     
     return SYS_ERR_OK;
 }
@@ -200,9 +203,9 @@ static errval_t destroy(struct bfdriver_instance* bfi) {
 
 void poll(void) {
     uint32_t head, tail;
-    head = ((uint32_t*)state->vars_base)[3];
-    tail = ((uint32_t*)state->vars_base)[4];
-    if (head == tail) tx_frame_polled(state);
+    head = ((uint32_t*)gem_state->vars_base)[3];
+    tail = ((uint32_t*)gem_state->vars_base)[4];
+    if (head == tail) tx_frame_polled(gem_state);
 }
 
 /**
