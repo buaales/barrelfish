@@ -1,6 +1,6 @@
 BARREL_PATH=~/barrelfish
 BUILD_DIR=build
-MOUNT_PATH=/mnt/shared_folder
+MOUNT_PATH=/mnt
 SBIN_DIR=armv8/sbin
 MENU_DIR=hake/menu.lst.armv8_zynqmp
 MENU_NAME/menu.lst
@@ -8,11 +8,6 @@ MENU_NAME/menu.lst
 # build barrelfish
 cd $BUILD_DIR
 make ZynqmpZCU104 -j4
-
-# mount sdcard
-if [ ! -d "/mnt/shared_folder" ]; then
-    sudo mkdir $MOUNT_PATH
-fi
 
 sudo mount -t vboxsf shared_folder $MOUNT_PATH
 
