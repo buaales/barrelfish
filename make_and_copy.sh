@@ -1,8 +1,9 @@
-BARREL_PATH=~/lwip2_barrelfish
+BARREL_PATH=~/barrelfish
 BUILD_DIR=build
 MOUNT_PATH=/mnt/shared_folder
 SBIN_DIR=armv8/sbin
 MENU_DIR=hake/menu.lst.armv8_zynqmp
+MENU_NAME/menu.lst
 
 # build barrelfish
 cd $BUILD_DIR
@@ -19,7 +20,7 @@ sudo mount -t vboxsf shared_folder $MOUNT_PATH
 echo "####: waiting for copy.\n"
 sudo rm -r $MOUNT_PATH/sbin
 sudo cp -r $BARREL_PATH/$BUILD_DIR/$SBIN_DIR $MOUNT_PATH/sbin
-sudo cp $BARREL_PATH/$MENU_DIR $MOUNT_PATH
+sudo cp $BARREL_PATH/$MENU_DIR $MOUNT_PATH/$MENU_NAME
 echo "####: copy done.\n"
 
 #umount sdcard
