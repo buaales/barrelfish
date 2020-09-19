@@ -1,6 +1,8 @@
 #ifndef __ZYNQMP_GEM_H__
 #define __ZYNQMP_GEM_H__
 
+#include <dev/zynqmp_gem_dev.h>
+
 #define ZYNQMP_GEM_BUFSIZE 1024
 #define ZYNQMP_GEM_FRAMESIZE 256
 #define ZYNQMP_GEM_N_BUFS 8
