@@ -55,7 +55,7 @@ static void rx_check_controller_lifesign_request(struct zynqmp_cni_devif_binding
     struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
     uint32_t lifesign = zynqmp_cni_clife_rd(&device);
     state->controller_lifesign = lifesign;
-    tx_check_controller_lifesign_response(state, lifesign);
+    tx_check_controller_lifesign_response(state);
 }
 
 static void tx_read_rx_msg_response_cb(void *a) {
