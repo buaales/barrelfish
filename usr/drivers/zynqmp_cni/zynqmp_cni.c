@@ -27,7 +27,7 @@ static zynqmp_cni_t device;
 static char msg[256];
 
 static void tx_read_rx_msg_response(struct zynqmp_cni_state* st);
-static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st, uint32_t lifesign);
+static void tx_check_controller_lifesign_response(struct zynqmp_cni_state* st);
 
 static void zynqmp_cni_init(mackerel_addr_t reg_vbase) {
     zynqmp_cni_initialize(&device, reg_vbase);
@@ -54,7 +54,7 @@ static void rx_update_host_lifesign(struct zynqmp_cni_devif_binding* b, uint32_t
 static void rx_check_controller_lifesign_request(struct zynqmp_cni_devif_binding* b) {
     struct zynqmp_cni_state* state = (struct zynqmp_cni_state*)b->st;
     uint32_t lifesign = zynqmp_cni_clife_rd(&device);
-    st->controller_lifesign = lifesign;
+    state->controller_lifesign = lifesign;
     tx_check_controller_lifesign_response(state, lifesign);
 }
 
