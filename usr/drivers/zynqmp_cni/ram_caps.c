@@ -16,4 +16,5 @@ errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* ret)
     errval_t err = ram_alloc_state->
         ram_alloc_func(ret, size, address,
             address + size);
+    return err;
 }
