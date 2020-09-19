@@ -3,7 +3,7 @@ BUILD_DIR=build
 MOUNT_PATH=/mnt
 SBIN_DIR=armv8/sbin
 MENU_DIR=hake/menu.lst.armv8_zynqmp
-MENU_NAME/menu.lst
+MENU_NAME=menu.lst
 
 # build barrelfish
 cd $BUILD_DIR
