@@ -290,26 +290,26 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     q->tx_tail = 0;
     q->bound = false;
     ZYNQMP_GEM_DEBUG("zynqmp gem queue create .\n");
-    err = get_ram_cap(PRESET_DATA_BASE, 12, &tmp);
+    err = get_ram_cap(PRESET_DATA_BASE, PRESET_DATA_SIZE_BITS, &tmp);
     assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, 0x1000, tmp, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, PRESET_DATA_SIZE, tmp, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->mac_address = *(uint64_t*)va;
     err = vspace_unmap(va);
     assert(err_is_ok(err));
     err = cap_delete(tmp);
     assert(err_is_ok(err));
 
-    err = get_ram_cap(SHARED_REGION_VARIABLES_BASE, 12, &(q ->shared_vars_region));
+    err = get_ram_cap(SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABELS_SIZE_BITS, &(q ->shared_vars_region));
     assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, 0x1000, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_vars_base = (lvaddr_t)va;
-    err = get_ram_cap(SHARED_REGION_ETH_RX_BASE, 16, &(q->shared_rx_region));
+    err = get_ram_cap(SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE_BITS, &(q->shared_rx_region));
     assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, 0x10000, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_rx_base = (lvaddr_t)va;
-    err = get_ram_cap(SHARED_REGION_ETH_TX_BASE, 16, &(q->shared_tx_region));
+    err = get_ram_cap(SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE_BITS, &(q->shared_tx_region));
     assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, 0x10000, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_tx_base = (lvaddr_t)va;
 
     char service[128] = "zynqmp_gem_devif";
