@@ -387,7 +387,7 @@ static void add_mem(struct capref *mem_cap, size_t size, genpaddr_t base){
         mem_avail += size;
     }
     else {
-        DEBUG_ERR(err, "Warning: adding RAM region (%p/%zu) FAILED", base, (1UL << size_bits));
+        DEBUG_ERR(err, "Warning: adding RAM region (%p/%zu) FAILED", base, size);
     }
 
     /* try to refill slot allocator (may fail if the mem allocator is empty) */
