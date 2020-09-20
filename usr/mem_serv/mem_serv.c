@@ -381,6 +381,7 @@ static genpaddr_t guess_physical_addr_start(void)
 } // end function: guess_physical_addr_start
 
 static void add_mem(struct capref *mem_cap, uint8_t size_bits, genpaddr_t base){
+    errval_t err;
     err = mm_add(&mm_ram, *mem_cap, size_bits, base);
     if (err_is_ok(err)) {
         mem_avail += (1UL << size_bits);
@@ -493,9 +494,9 @@ initialize_ram_alloc(void)
 
     add_mem(&mem_cap, PRESET_DATA_SIZE_BITS, PRESET_DATA_BASE);
     add_mem(&mem_cap, SHARED_REGION_VARIABELS_SIZE_BITS, SHARED_REGION_VARIABLES_BASE);
-    add_mem(&mem_cap, SHARED_REGION_CNI_MSG_SIZE, SHARED_REGION_CNI_MSG_BASE);
-    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_TX_BASE);
-    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_RX_BASE);
+    add_mem(&mem_cap, SHARED_REGION_CNI_MSG_SIZE_BITS, SHARED_REGION_CNI_MSG_BASE);
+    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE_BITS, SHARED_REGION_ETH_TX_BASE);
+    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE_BITS, SHARED_REGION_ETH_RX_BASE);
 
     err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
     if (err_is_fail(err)) {
