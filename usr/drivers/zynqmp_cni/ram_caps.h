@@ -13,6 +13,6 @@
 #include <barrelfish/core_state.h>
 #include <barrelfish/barrelfish.h>
 
-errval_t get_ram_cap(lpaddr_t address, size_t size, struct capref* retcap);
+errval_t get_ram_cap(lpaddr_t address, uint8_t size_bits, struct capref* retcap);
  
 #endif // DEVICE_CAPS_H
