@@ -141,6 +141,30 @@ errval_t ram_alloc(struct capref *ret, uint8_t size_bits)
     return err;
 }
 
+errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits) {
+    struct capref ram;
+    struct ram_alloc_state* ram_alloc_state = get_ram_alloc_state();
+    assert(ram_alloc_state->ram_alloc_func != NULL);
+    errval_t err = ram_alloc_state->
+        ram_alloc_func(&ram, size_bits, address,
+            address + (1UL << size_bits));
+    if (!err_is_ok(err)) {
+        return err;
+    }
+
+    struct capref frame;
+    err = slot_alloc(&frame);
+    if (!err_is_ok(err)) {
+        return err;
+    }
+    err = cap_retype(frame, ram, 0, ObjType_Frame, (1UL << size_bits), 1);
+    if (!err_is_ok(err)) {
+        return err;
+    }
+    *ret = frame;
+    return SYS_ERR_OK;
+}
+
 errval_t ram_available(genpaddr_t *available, genpaddr_t *total)
 {
     errval_t err;

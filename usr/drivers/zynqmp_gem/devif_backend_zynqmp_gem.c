@@ -290,7 +290,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     q->tx_tail = 0;
     q->bound = false;
     ZYNQMP_GEM_DEBUG("zynqmp gem queue create .\n");
-    err = get_ram_cap(PRESET_DATA_BASE, PRESET_DATA_SIZE_BITS, &tmp);
+    err = get_ram_cap(&tmp, PRESET_DATA_BASE, PRESET_DATA_SIZE_BITS);
     assert(err_is_ok(err));
     vspace_map_one_frame_attr(&va, PRESET_DATA_SIZE, tmp, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->mac_address = *(uint64_t*)va;
@@ -299,15 +299,15 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     err = cap_delete(tmp);
     assert(err_is_ok(err));
 
-    err = get_ram_cap(SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABELS_SIZE_BITS, &(q ->shared_vars_region));
+    err = get_ram_cap(&(q->shared_vars_region), SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABELS_SIZE_BITS);
     assert(err_is_ok(err));
     vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_vars_base = (lvaddr_t)va;
-    err = get_ram_cap(SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE_BITS, &(q->shared_rx_region));
+    err = get_ram_cap(&(q->shared_rx_region), SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE_BITS);
     assert(err_is_ok(err));
     vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_rx_base = (lvaddr_t)va;
-    err = get_ram_cap(SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE_BITS, &(q->shared_tx_region));
+    err = get_ram_cap(&(q->shared_tx_region), SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE_BITS);
     assert(err_is_ok(err));
     vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_tx_base = (lvaddr_t)va;
