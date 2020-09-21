@@ -380,9 +380,11 @@ static genpaddr_t guess_physical_addr_start(void)
     return start_physical;
 } // end function: guess_physical_addr_start
 
-static void add_mem(struct capref *mem_cap, size_t size, genpaddr_t base){
+static void add_mem(size_t size, genpaddr_t base){
     errval_t err;
-    err = mm_add_multi(&mm_ram, *mem_cap, size, base);
+    struct capref mem_cap;
+    mm_ram.slot_alloc(mm_ram.slot_alloc_inst, 1, &mem_cap);
+    err = mm_add_multi(&mm_ram, mem_cap, size, base);
     if (err_is_ok(err)) {
         mem_avail += size;
     }
@@ -391,7 +393,7 @@ static void add_mem(struct capref *mem_cap, size_t size, genpaddr_t base){
     }
 
     /* try to refill slot allocator (may fail if the mem allocator is empty) */
-    err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
+    err = mm_ram.slot_refill(mm_ram.slot_alloc_inst);
     if (err_is_fail(err) && err_no(err) != MM_ERR_SLOT_MM_ALLOC) {
         DEBUG_ERR(err, "in slot_prealloc_refill() while initialising"
             " memory allocator");
@@ -492,11 +494,11 @@ initialize_ram_alloc(void)
         }
     }
 
-    add_mem(&mem_cap, PRESET_DATA_SIZE, PRESET_DATA_BASE);
-    add_mem(&mem_cap, SHARED_REGION_VARIABELS_SIZE, SHARED_REGION_VARIABLES_BASE);
-    add_mem(&mem_cap, SHARED_REGION_CNI_MSG_SIZE, SHARED_REGION_CNI_MSG_BASE);
-    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_TX_BASE);
-    add_mem(&mem_cap, SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_RX_BASE);
+    add_mem(PRESET_DATA_SIZE, PRESET_DATA_BASE);
+    add_mem(SHARED_REGION_VARIABELS_SIZE, SHARED_REGION_VARIABLES_BASE);
+    add_mem(SHARED_REGION_CNI_MSG_SIZE, SHARED_REGION_CNI_MSG_BASE);
+    add_mem(SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_TX_BASE);
+    add_mem(SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_RX_BASE);
 
     err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
     if (err_is_fail(err)) {
