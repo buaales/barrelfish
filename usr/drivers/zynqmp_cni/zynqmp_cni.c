@@ -162,6 +162,8 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
     ZYNQMP_CNI_DEBUG("Map device capability.\n");
     err = map_device_cap(caps[0], &reg_vbase);
     assert(err_is_ok(err) && reg_vbase);
+    err = slot_alloc(&frame);
+    assert(err_is_ok(err));
 	err = get_ram_cap(&frame, SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE_BITS);
 	vspace_map_one_frame_attr(&va, SHARED_REGION_CNI_MSG_SIZE, frame, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     st->msg_vbase = (lvaddr_t)va;
