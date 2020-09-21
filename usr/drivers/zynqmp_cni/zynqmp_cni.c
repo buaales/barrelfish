@@ -21,7 +21,6 @@
 
 #include "zynqmp_cni_debug.h"
 #include "zynqmp_cni.h"
-#include "ram_caps.h"
 
 static zynqmp_cni_t device;
 static char msg[256];

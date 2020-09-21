@@ -22,7 +22,6 @@
 #include "zynqmp_gem.h"
 #include "zynqmp_gem_devq.h"
 #include "zynqmp_gem_debug.h"
-#include "ram_caps.h"
 
 lvaddr_t tx_addrs[ZYNQMP_GEM_N_BUFS] = { 0 };
 lvaddr_t rx_addrs[ZYNQMP_GEM_N_BUFS] = { 0 };
