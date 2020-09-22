@@ -58,7 +58,7 @@ static struct allowed_registers zynqmp_cni = {
         {SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE},
         {0x0, 0x0}
     }
-}
+};
 
 static struct allowed_registers* zynqmp[] = {
     &zynqmp_gem,
@@ -126,7 +126,6 @@ default_start_function(coreid_t where, struct module_info* driver,
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
                    regs[i]->registers[j][0], regs[i]->registers[j][1]);
 
-            if (regs[])
             lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE-1);
             err = get_device_cap(base,
                                  regs[i]->registers[j][1],

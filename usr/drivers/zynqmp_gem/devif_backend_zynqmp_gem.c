@@ -235,35 +235,35 @@ static void rx_frame_polled(struct zynqmp_gem_devif_binding* b) {
     q->isr(q);
 }
 
-static void rx_request_cap_response(struct zynqmp_gem_devif_binding* b, uint64_t mac, struct capref vars, struct capref tx, struct capref rx) {
+static void rx_request_caps_response(struct zynqmp_gem_devif_binding* b, uint64_t mac, struct capref vars, struct capref tx, struct capref rx) {
     struct zynqmp_gem_queue* q = b->st;
     void* va;
     q->mac_address = mac;
     q->shared_vars_region = vars;
-    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABLES_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_vars_base = (lvaddr_t)va;
     q->shared_tx_region = tx;
-    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABLES_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_tx_base = (lvaddr_t)va;
     q->shared_rx_region = rx;
-    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABLES_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     q->shared_rx_base = (lvaddr_t)va;
 }
 
-static void tx_request_cap_call_cb(void* a) {
+static void tx_request_caps_call_cb(void* a) {
     ZYNQMP_GEM_DEBUG("tx_create_queue_call done.");
 }
 
-static void tx_request_cap_call(struct zynqmp_gem_queue* st) {
+static void tx_request_caps_call(struct zynqmp_gem_queue* st) {
     errval_t err;
-    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_call_cb, (void*)(st->binding));
-    err = zynqmp_gem_devif_request_cap_call__tx(st->binding, txcont);
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_caps_call_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_request_caps_call__tx(st->binding, txcont);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_GEM_DEBUG("tx_create_queue_call again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT((void (*)(void*))tx_request_cap_call, (void*)(st->binding));
+            txcont = MKCONT((void (*)(void*))tx_request_caps_call, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -280,8 +280,8 @@ static void bind_cb(void *st, errval_t err, struct zynqmp_gem_devif_binding *b)
 {
     zynqmp_gem_queue_t* q = (zynqmp_gem_queue_t*) st;
     b->st = st;
+    b->rx_vtbl.request_caps_response = rx_request_caps_response;
     b->rx_vtbl.frame_polled = rx_frame_polled;
-    
     q->binding = b;
     q->bound = true;
 }
@@ -290,8 +290,6 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
 {
     errval_t err;
     zynqmp_gem_queue_t *q;
-    void *va;
-    struct capref tmp;
 
     ZYNQMP_GEM_DEBUG("zynqmp gem queue create called.\n");
 
@@ -324,7 +322,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
         event_dispatch(get_default_waitset());
     }
 
-    tx_request_cap_call(q);
+    tx_request_caps_call(q);
 
     if (err_is_fail(err)) {
         return err;

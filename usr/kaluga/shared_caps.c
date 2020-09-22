@@ -92,7 +92,7 @@ errval_t get_shared_cap(genpaddr_t address, size_t size, struct capref* devframe
 
 errval_t init_shared_caps_manager(void)
 {
-    errval_t err, error_code;
+    errval_t err, msgerr;
     struct monitor_blocking_binding* cl = get_monitor_blocking_binding();
     assert(cl != NULL);
 
@@ -148,8 +148,6 @@ errval_t init_shared_caps_manager(void)
     struct capref phys_cap;
     phys_cap.cnode = build_cnoderef(pacn, CNODE_TYPE_OTHER);
     phys_cap.slot = 0;
-
-    ACPI_DEBUG("acpi: creating L2 cnode for device caps\n");
 
     struct cnoderef devcnode;
     struct capref devcnode_cap;
