@@ -16,6 +16,7 @@ extern "C" {
 #define ZYNQMP_PSDDR_MEM_BASEADDR		0x00000000U
 #define ZYNQMP_PSDDR_MEM_HIGHADDR		0x3FFFFFFFU
 
+#define ZYNQMP_CNI_BASEADDR 0xA0000000
 /*
  * This block contains constant declarations for the I/O peripherals 
  * attached in 32-bit APB bus within the hardblock. These have been 

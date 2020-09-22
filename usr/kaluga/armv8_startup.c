@@ -24,6 +24,7 @@
 #include <maps/zynqmp_map.h>
 
 #include "kaluga.h"
+#include <memory_maps.h>
 
 #ifdef CLIENT
 #undef CLIENT
@@ -33,7 +34,7 @@
 struct allowed_registers
 {
     char* binary;
-    lpaddr_t registers[][2];
+    genpaddr_t registers[][2];
 };
 
 static struct allowed_registers zynqmp_gem = {
@@ -41,12 +42,27 @@ static struct allowed_registers zynqmp_gem = {
     .registers =
     {
         {ZYNQMP_GEM3_BASEADDR, 0x1000},
+        {PRESET_DATA_BASE, PRESET_DATA_SIZE},
+        {SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABLES_SIZE},
+        {SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE},
+        {SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE},
         {0x0, 0x0}
     }
 };
 
+static struct allowed_registers zynqmp_cni = {
+    .binary = "zynqmp_cni",
+    .registers = 
+    {
+        {ZYNQMP_CNI_BASEADDR, 0x1000},
+        {SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE},
+        {0x0, 0x0}
+    }
+}
+
 static struct allowed_registers* zynqmp[] = {
     &zynqmp_gem,
+    &zynqmp_cni,
     NULL,
 };
 
@@ -110,6 +126,7 @@ default_start_function(coreid_t where, struct module_info* driver,
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
                    regs[i]->registers[j][0], regs[i]->registers[j][1]);
 
+            if (regs[])
             lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE-1);
             err = get_device_cap(base,
                                  regs[i]->registers[j][1],
@@ -216,9 +233,16 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
             regs[i]->registers[j][0], regs[i]->registers[j][1]);
 
-            lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE-1);
-            err = get_device_cap(base, regs[i]->registers[j][1], &device_frame);
-            assert(err_is_ok(err));
+            if (regs[i]->registers[j][0] <= 0xffffffff) {
+                lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
+                err = get_device_cap(base, regs[i]->registers[j][1], &device_frame);
+                assert(err_is_ok(err));
+            }
+            else {
+                genpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
+                err = get_shared_cap(base, regs[i]->registers[j][1], &device_frame);
+                assert(err_is_ok(err));
+            }
 
             KALUGA_DEBUG("get_device_cap worked\n");
             err = ddomain_driver_add_cap(drv, device_frame);

@@ -234,20 +234,36 @@ static void rx_frame_polled(struct zynqmp_gem_devif_binding* b) {
     struct zynqmp_gem_queue* q = b->st;
     q->isr(q);
 }
-static void tx_create_queue_call_cb(void* a) {
+
+static void rx_request_cap_response(struct zynqmp_gem_devif_binding* b, uint64_t mac, struct capref vars, struct capref tx, struct capref rx) {
+    struct zynqmp_gem_queue* q = b->st;
+    void* va;
+    q->mac_address = mac;
+    q->shared_vars_region = vars;
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    q->shared_vars_base = (lvaddr_t)va;
+    q->shared_tx_region = tx;
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    q->shared_tx_base = (lvaddr_t)va;
+    q->shared_rx_region = rx;
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    q->shared_rx_base = (lvaddr_t)va;
+}
+
+static void tx_request_cap_call_cb(void* a) {
     ZYNQMP_GEM_DEBUG("tx_create_queue_call done.");
 }
 
-static void tx_create_queue_call(struct zynqmp_gem_queue* st) {
+static void tx_request_cap_call(struct zynqmp_gem_queue* st) {
     errval_t err;
-    struct event_closure txcont = MKCONT((void (*)(void*))tx_create_queue_call_cb, (void*)(st->binding));
-    err = zynqmp_gem_devif_create_queue_call__tx(st->binding, txcont, st->shared_vars_region);
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_call_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_request_cap_call__tx(st->binding, txcont);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_GEM_DEBUG("tx_create_queue_call again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT((void (*)(void*))tx_create_queue_call, (void*)(st->binding));
+            txcont = MKCONT((void (*)(void*))tx_request_cap_call, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -289,37 +305,6 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
     q->tx_tail = 0;
     q->bound = false;
     ZYNQMP_GEM_DEBUG("zynqmp gem queue create .\n");
-    err = slot_alloc(&tmp);
-    assert(err_is_ok(err));
-    err = get_ram_cap(&tmp, PRESET_DATA_BASE, PRESET_DATA_SIZE_BITS);
-    assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, PRESET_DATA_SIZE, tmp, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->mac_address = *(uint64_t*)va;
-    err = vspace_unmap(va);
-    assert(err_is_ok(err));
-    err = cap_delete(tmp);
-    assert(err_is_ok(err));
-
-    err = slot_alloc(&(q->shared_vars_region));
-    assert(err_is_ok(err));
-    err = get_ram_cap(&(q->shared_vars_region), SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABELS_SIZE_BITS);
-    assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, q->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_vars_base = (lvaddr_t)va;
-
-    err = slot_alloc(&(q->shared_rx_region));
-    assert(err_is_ok(err));
-    err = get_ram_cap(&(q->shared_rx_region), SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE_BITS);
-    assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_rx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_rx_base = (lvaddr_t)va;
-
-    err = slot_alloc(&(q->shared_tx_region));
-    assert(err_is_ok(err));
-    err = get_ram_cap(&(q->shared_tx_region), SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE_BITS);
-    assert(err_is_ok(err));
-    vspace_map_one_frame_attr(&va, SHARED_REGION_ETH_SIZE, q->shared_tx_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    q->shared_tx_base = (lvaddr_t)va;
 
     char service[128] = "zynqmp_gem_devif";
     iref_t iref;
@@ -339,7 +324,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
         event_dispatch(get_default_waitset());
     }
 
-    tx_create_queue_call(q);
+    tx_request_cap_call(q);
 
     if (err_is_fail(err)) {
         return err;

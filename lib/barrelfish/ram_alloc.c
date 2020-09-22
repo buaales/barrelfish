@@ -140,7 +140,7 @@ errval_t ram_alloc(struct capref *ret, uint8_t size_bits)
 #endif
     return err;
 }
-
+/*
 errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits) {
     struct mem_binding* mc = get_mem_client();
     errval_t err, err2;
@@ -157,6 +157,7 @@ errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits) 
     *ret = frame;
     return SYS_ERR_OK;
 }
+ */
 
 errval_t ram_available(genpaddr_t *available, genpaddr_t *total)
 {

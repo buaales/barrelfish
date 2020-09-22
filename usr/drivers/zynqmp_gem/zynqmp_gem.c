@@ -27,14 +27,9 @@
 static struct zynqmp_gem_state* gem_state;
 
 
-static void rx_create_queue_call(struct zynqmp_gem_devif_binding *b, struct capref shared_vars_region) {
+static void rx_request_cap_call(struct zynqmp_gem_devif_binding *b) {
     struct zynqmp_gem_state *state = b->st;
-    void* va;
-
-    state->vars_cap = shared_vars_region;
-    errval_t err = vspace_map_one_frame_attr(&va, 0x1000, shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
-    assert(err_is_ok(err));
-    state->vars_base = (lvaddr_t)va;
+    tx_request_cap_response(state);
 }
 
 static void tx_frame_polled_cb(void* a) {
@@ -51,6 +46,31 @@ static void tx_frame_polled(struct zynqmp_gem_state* st) {
             ZYNQMP_GEM_DEBUG("tx_frame_polled again\n");
             struct waitset* ws = get_default_waitset();
             txcont = MKCONT((void (*)(void*))tx_frame_polled, (void*)(st->binding));
+            err = st->binding->register_send(st->binding, ws, txcont);
+            if (err_is_fail(err)) {
+                // note that only one continuation may be registered at a time
+                ZYNQMP_GEM_DEBUG("tx_frame_polled register failed!");
+            }
+        }
+        else {
+            ZYNQMP_GEM_DEBUG("tx_frame_polled error\n");
+        }
+    }
+}
+
+static void tx_request_cap_response_cb(void* a) {
+    ZYNQMP_GEM_DEBUG("tx_request_cap_response done.");
+}
+static void tx_request_cap_response(struct zynqmp_gem_state* st) {
+    errval_t err;
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_response_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_request_cap_response__tx(st->binding, txcont, st->mac, st->shared_vars_region, st->shared_tx_region, st->shared_rx_region);
+
+    if (err_is_fail(err)) {
+        if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
+            ZYNQMP_GEM_DEBUG("tx_frame_polled again\n");
+            struct waitset* ws = get_default_waitset();
+            txcont = MKCONT((void (*)(void*))tx_request_cap_response, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
@@ -139,11 +159,18 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
         flags, struct capref* caps, size_t caps_len, char** args, size_t
         args_len, iref_t* dev) {
 
+    void* va;
     gem_state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
     gem_state->initialized = false;
     gem_state->service_name = "zynqmp_gem";
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, caps[1], VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    gen_state->mac = *(uint64_t *)va;
 
-
+    gem_state->shared_vars_region = caps[2];
+    vspace_map_one_frame_attr(&va, SHARED_REGION_VARIABELS_SIZE, gem_state->shared_vars_region, VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
+    gen_state->shared_vars_base = (lvaddr_t)va;
+    gem_state->shared_tx_region = caps[3];
+    gem_state->shared_rx_region = caps[4];
 
     /* For use with the net_queue_manager */
 
@@ -203,8 +230,8 @@ static errval_t destroy(struct bfdriver_instance* bfi) {
 
 void poll(void) {
     uint32_t head, tail;
-    head = ((uint32_t*)gem_state->vars_base)[3];
-    tail = ((uint32_t*)gem_state->vars_base)[4];
+    head = ((uint32_t*)gem_state->shared_vars_base)[3];
+    tail = ((uint32_t*)gem_state->shared_vars_base)[4];
     if (head == tail) tx_frame_polled(gem_state);
 }
 

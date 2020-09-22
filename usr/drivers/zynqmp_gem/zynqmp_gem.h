@@ -11,8 +11,12 @@
 struct zynqmp_gem_state {
     bool initialized;
 
-    lvaddr_t vars_base;
-    struct capref vars_cap;
+    struct capref shared_vars_region;
+    struct capref shared_tx_region;
+    struct capref shared_rx_region;
+    lvaddr_t shared_vars_base;
+    uint64_t mac;
+
 
     /* For use with the net_queue_manager */
     char *service_name;

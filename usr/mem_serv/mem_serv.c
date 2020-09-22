@@ -26,8 +26,6 @@
 #include <if/mem_defs.h>
 #include <if/monitor_defs.h>
 
-#include <memory_maps.h>
-
 size_t mem_total = 0, mem_avail = 0;
 
 /* parameters for size of supported RAM and thus required storage */
@@ -380,36 +378,6 @@ static genpaddr_t guess_physical_addr_start(void)
     return start_physical;
 } // end function: guess_physical_addr_start
 
-static void add_mem(size_t size, genpaddr_t base){
-    errval_t err;
-    struct capref mem_cap;
-    mm_ram.slot_alloc(mm_ram.slot_alloc_inst, 1, &mem_cap);
-    err = mm_add_multi(&mm_ram, mem_cap, size, base);
-    if (err_is_ok(err)) {
-        mem_avail += size;
-    }
-    else {
-        DEBUG_ERR(err, "Warning: adding RAM region (%p/%zu) FAILED", base, size);
-    }
-
-    /* try to refill slot allocator (may fail if the mem allocator is empty) */
-    err = mm_ram.slot_refill(mm_ram.slot_alloc_inst);
-    if (err_is_fail(err) && err_no(err) != MM_ERR_SLOT_MM_ALLOC) {
-        DEBUG_ERR(err, "in slot_prealloc_refill() while initialising"
-            " memory allocator");
-        abort();
-    }
-
-    /* refill slab allocator if needed and possible */
-    if (slab_freecount(&mm_ram.slabs) <= MINSPARENODES
-        && mem_avail > (1UL << (CNODE_BITS + OBJBITS_CTE)) * 2
-        + 10 * BASE_PAGE_SIZE) {
-        slab_default_refill(&mm_ram.slabs); // may fail
-    }
-
-    mem_cap->slot++;
-}
-
 // FIXME: error handling (not asserts) needed in this function
 //XXX: workaround for inline bug of arm-gcc 4.6.1 and lower
 #if defined(__ARM_ARCH_7A__) && defined(__GNUC__) \
@@ -493,12 +461,6 @@ initialize_ram_alloc(void)
             mem_cap.slot++;
         }
     }
-
-    add_mem(PRESET_DATA_SIZE, PRESET_DATA_BASE);
-    add_mem(SHARED_REGION_VARIABELS_SIZE, SHARED_REGION_VARIABLES_BASE);
-    add_mem(SHARED_REGION_CNI_MSG_SIZE, SHARED_REGION_CNI_MSG_BASE);
-    add_mem(SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_TX_BASE);
-    add_mem(SHARED_REGION_ETH_SIZE, SHARED_REGION_ETH_RX_BASE);
 
     err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
     if (err_is_fail(err)) {

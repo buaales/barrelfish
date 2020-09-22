@@ -30,7 +30,7 @@ typedef errval_t (* ram_alloc_func_t)(struct capref *ret, uint8_t size_bits,
 errval_t ram_alloc_fixed(struct capref *ret, uint8_t size_bits,
                          uint64_t minbase, uint64_t maxlimit);
 errval_t ram_alloc(struct capref *retcap, uint8_t size_bits);
-errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits);
+// errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits);
 errval_t ram_available(genpaddr_t *available, genpaddr_t *total);
 errval_t ram_alloc_set(ram_alloc_func_t local_allocator);
 void ram_set_affinity(uint64_t minbase, uint64_t maxlimit);
