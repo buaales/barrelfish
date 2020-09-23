@@ -6,7 +6,7 @@
 
 #define ZYNQMP_GEM_BUFSIZE 1024
 #define ZYNQMP_GEM_FRAMESIZE 256
-#define ZYNQMP_GEM_N_BUFS 8
+#define ZYNQMP_GEM_N_BUFS 1
 
 struct zynqmp_gem_state {
     bool initialized;
