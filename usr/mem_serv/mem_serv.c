@@ -88,7 +88,7 @@ struct memory_region {
     size_t size;
 };
 
-static struct memory_reigon regions[] = {
+static struct memory_region regions[] = {
     {PRESET_DATA_BASE, PRESET_DATA_SIZE},
     {SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABLES_SIZE},
     {SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE},
