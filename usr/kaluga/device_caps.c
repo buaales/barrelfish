@@ -16,13 +16,19 @@ errval_t get_shared_cap(genpaddr_t address, size_t size, struct capref* devframe
     errval_t err;
     uint64_t saved_minbase, saved_maxlimit;
     struct capref ramcap;
+    ram_get_affinity(&saved_minbase, &saved_maxlimit);
     debug_printf("my dbg get shared cap 0.\n");
     // for test
     err = ram_alloc(&ramcap, log2ceil(size));
     assert(err_is_ok(err));
+    ram_set_affinity(0x40000000, 0x40001000);
+    err = ram_alloc(&ramcap, log2ceil(0x1000));
+    debug_printf("my dbg get shared cap x1.\n");
+    ram_set_affinity(0x50000000, 0x50005000);
+    err = ram_alloc(&ramcap, log2ceil(0x5000));
+    debug_printf("my dbg get shared cap x2.\n");
     // for test
     debug_printf("my dbg get shared cap 1.\n");
-    ram_get_affinity(&saved_minbase, &saved_maxlimit);
     ram_set_affinity(address, address + size);
     err = ram_alloc(&ramcap, log2ceil(size));
     debug_printf("my dbg get shared cap 2.\n");

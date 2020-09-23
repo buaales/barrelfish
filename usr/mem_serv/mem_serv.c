@@ -448,7 +448,7 @@ initialize_ram_alloc(void)
                 mem_cap.slot++;
                 continue;
             }
-            debug_printf("my dbg init ram alloc bi, base/size:%lx/%x", bi->regions[i].mr_bytes, bi->regions[i].mr_base);
+            debug_printf("my dbg init ram alloc bi, base/size:%lx/%x", bi->regions[i].mr_base, bi->regions[i].mr_bytes);
             err = mm_add_multi(&mm_ram, mem_cap, bi->regions[i].mr_bytes,
                                bi->regions[i].mr_base);
             if (err_is_ok(err)) {
@@ -478,7 +478,7 @@ initialize_ram_alloc(void)
     }
 
     for (int i = 0; i < sizeof(regions) / sizeof(struct memory_region); i++) {
-        debug_printf("my dbg init ram alloc usr defined region, base/size:%lx/%x", regions[i].base, regions[i].size);
+        debug_printf("my dbg init ram alloc usr defined region, base/size:%lx/%x.\n", regions[i].base, regions[i].size);
         err = mm_add_multi(&mm_ram, mem_cap, regions[i].size,
             regions[i].base);
         if (err_is_ok(err)) {
