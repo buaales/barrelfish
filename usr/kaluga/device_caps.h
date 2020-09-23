@@ -10,7 +10,7 @@
 #ifndef DEVICE_CAPS_H
 #define DEVICE_CAPS_H
 
-errval_t get_shared_cap(genpaddr_t address, size_t size, struct capref* devframe);
+errval_t get_shared_cap(lpaddr_t address, size_t size, struct capref* devframe);
 errval_t get_device_cap(lpaddr_t address, size_t size, struct capref* devframe);
 errval_t init_device_caps_manager(void);
  

@@ -233,10 +233,10 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
             struct capref device_frame;
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
             regs[i]->registers[j][0], regs[i]->registers[j][1]);
-            genpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
+            lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
             if (base > 0x80000000) {
                 debug_printf("my dbg provide cap x1.\n");
-                err = get_device_cap((lpaddr_t)base, regs[i]->registers[j][1], &device_frame);
+                err = get_device_cap(base, regs[i]->registers[j][1], &device_frame);
                 assert(err_is_ok(err));
             }
             else {

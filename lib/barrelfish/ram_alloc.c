@@ -140,24 +140,6 @@ errval_t ram_alloc(struct capref *ret, uint8_t size_bits)
 #endif
     return err;
 }
-/*
-errval_t get_ram_cap(struct capref* ret, genpaddr_t address, uint8_t size_bits) {
-    struct mem_binding* mc = get_mem_client();
-    errval_t err, err2;
-    struct capref ram;
-    err = mc->rpc_tx_vtbl.allocate(mc, size_bits, address, address + (1UL << size_bits), &err2, &ram);
-    assert(err_is_ok(err) && err_is_ok(err2));
-    struct capref frame;
-    err = slot_alloc(&frame);
-    assert(err_is_ok(err));
-    err = cap_retype(frame, ram, 0, ObjType_Frame, (1UL << size_bits), 1);
-    assert(err_is_ok(err));
-    err = cap_destroy(ram);
-    assert(err_is_ok(err));
-    *ret = frame;
-    return SYS_ERR_OK;
-}
- */
 
 errval_t ram_available(genpaddr_t *available, genpaddr_t *total)
 {
