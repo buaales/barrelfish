@@ -29,6 +29,7 @@ static struct zynqmp_gem_state* gem_state;
 static void tx_request_caps_response(struct zynqmp_gem_state* st);
 
 static void rx_request_caps_call(struct zynqmp_gem_devif_binding *b) {
+    ZYNQMP_GEM_DEBUG("rx_request_caps_call\n");
     struct zynqmp_gem_state *state = b->st;
     tx_request_caps_response(state);
 }
@@ -63,6 +64,7 @@ static void tx_request_caps_response_cb(void* a) {
     ZYNQMP_GEM_DEBUG("tx_request_caps_response done.");
 }
 static void tx_request_caps_response(struct zynqmp_gem_state* st) {
+    ZYNQMP_GEM_DEBUG("tx_request_caps_response\n");
     errval_t err;
     struct event_closure txcont = MKCONT((void (*)(void*))tx_request_caps_response_cb, (void*)(st->binding));
     err = zynqmp_gem_devif_request_caps_response__tx(st->binding, txcont, st->mac, st->shared_vars_region, st->shared_tx_region, st->shared_rx_region);
@@ -164,6 +166,8 @@ static errval_t init(struct bfdriver_instance* bfi, const char* name, uint64_t
     gem_state = (struct zynqmp_gem_state*)malloc(sizeof(struct zynqmp_gem_state));
     gem_state->initialized = false;
     gem_state->service_name = "zynqmp_gem";
+
+    ZYNQMP_GEM_DEBUG("zynqmp gem init\n");
     vspace_map_one_frame_attr(&va, PRESET_DATA_SIZE, caps[1], VREGION_FLAGS_READ_WRITE_NOCACHE, NULL, NULL);
     gem_state->mac = *(uint64_t *)va;
 

@@ -162,7 +162,6 @@ static errval_t zynqmp_gem_enqueue(struct devq* q, regionid_t rid,
     zynqmp_gem_queue_t *q_ext = (zynqmp_gem_queue_t *)q;
     errval_t err;
     if (flags & NETIF_RXFLAG) {
-        assert(length <= ZYNQMP_GEM_FRAMESIZE);
 
         err = zynqmp_gem_enqueue_rx(q_ext, rid, offset, length, valid_data, valid_length,
                              flags);
@@ -255,6 +254,7 @@ static void tx_request_caps_call_cb(void* a) {
 }
 
 static void tx_request_caps_call(struct zynqmp_gem_queue* st) {
+    ZYNQMP_GEM_DEBUG("tx_request_caps_call\n");
     errval_t err;
     struct event_closure txcont = MKCONT((void (*)(void*))tx_request_caps_call_cb, (void*)(st->binding));
     err = zynqmp_gem_devif_request_caps_call__tx(st->binding, txcont);

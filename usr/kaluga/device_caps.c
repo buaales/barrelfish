@@ -17,17 +17,13 @@ errval_t get_shared_cap(lpaddr_t address, size_t size, struct capref* devframe)
     uint64_t saved_minbase, saved_maxlimit;
     struct capref ramcap, framecap;
     ram_get_affinity(&saved_minbase, &saved_maxlimit);
-    debug_printf("my dbg get shared cap 0.\n");
     ram_set_affinity(address, address + size);
     err = ram_alloc(&ramcap, log2ceil(size));
     assert(err_is_ok(err));
-    err = slot_alloc(&framecap);
-    if (!err_is_ok(err)) err_push(err, LIB_ERR_SLOT_ALLOC);
-    assert(err_is_fail(err));
-    err = cap_retype(framecap, ramcap, 0, ObjType_Frame, size, 1);
-    debug_printf("my dbg get shared cap 1.\n");
-    *devcap = framecap;
-    assert(err_is_fail(err));
+    err = slot_alloc(devframe);
+    assert(err_is_ok(err));
+    err = cap_retype(*devframe, ramcap, 0, ObjType_Frame, size, 1);
+    assert(err_is_ok(err));
     ram_set_affinity(saved_minbase, saved_maxlimit);
     return SYS_ERR_OK;
 }

@@ -225,17 +225,14 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
             continue;
         }
 
-        debug_printf("my dbg provide cap 0.\n");
         // Get the device cap from the managed capability tree
         // put them all in a single cnode
         for (size_t j=0; regs[i]->registers[j][0] != 0x0; j++) {
-            debug_printf("my dbg provide cap 1.\n");
             struct capref device_frame;
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
             regs[i]->registers[j][0], regs[i]->registers[j][1]);
             lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
             if (base > 0x80000000) {
-                debug_printf("my dbg provide cap x1.\n");
                 err = get_device_cap(base, regs[i]->registers[j][1], &device_frame);
                 assert(err_is_ok(err));
             }
@@ -246,7 +243,6 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
             }
 
             KALUGA_DEBUG("get_device_cap worked\n");
-            debug_printf("my dbg provide cap 2.\n");
             err = ddomain_driver_add_cap(drv, device_frame);
             assert(err_is_ok(err));
         }

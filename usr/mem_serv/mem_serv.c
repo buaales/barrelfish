@@ -81,21 +81,6 @@ static struct mm mm_ram;
 /// Slot allocator for MM
 static struct slot_prealloc ram_slot_alloc;
 
-#include <memory_maps.h>
-
-struct memory_region {
-    genpaddr_t base;
-    size_t size;
-};
-
-static struct memory_region regions[] = {
-    {PRESET_DATA_BASE, PRESET_DATA_SIZE},
-    {SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABLES_SIZE},
-    {SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE},
-    {SHARED_REGION_ETH_TX_BASE, SHARED_REGION_ETH_SIZE},
-    {SHARED_REGION_ETH_RX_BASE, SHARED_REGION_ETH_SIZE}
-};
-
 static errval_t mymm_alloc(struct capref *ret, uint8_t bits, genpaddr_t minbase,
                            genpaddr_t maxlimit)
 {
@@ -475,35 +460,6 @@ initialize_ram_alloc(void)
 
             mem_cap.slot++;
         }
-    }
-
-    for (int i = 0; i < sizeof(regions) / sizeof(struct memory_region); i++) {
-        debug_printf("my dbg init ram alloc usr defined region, base/size:%lx/%x.\n", regions[i].base, regions[i].size);
-        err = mm_add_multi(&mm_ram, mem_cap, regions[i].size,
-            regions[i].base);
-        if (err_is_ok(err)) {
-            mem_avail += regions[i].size;
-        }
-        else {
-            DEBUG_ERR(err, "Warning: adding RAM region %d (%p/%zu) FAILED",
-                i, regions[i].size, regions[i].base);
-        }
-
-        /* try to refill slot allocator (may fail if the mem allocator is empty) */
-        err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
-        if (err_is_fail(err) && err_no(err) != MM_ERR_SLOT_MM_ALLOC) {
-            DEBUG_ERR(err, "in slot_prealloc_refill() while initialising"
-                " memory allocator");
-            abort();
-        }
-
-        /* refill slab allocator if needed and possible */
-        if (slab_freecount(&mm_ram.slabs) <= MINSPARENODES
-            && mem_avail > (1UL << (CNODE_BITS + OBJBITS_CTE)) * 2
-            + 10 * BASE_PAGE_SIZE) {
-            slab_default_refill(&mm_ram.slabs); // may fail
-        }
-        mem_cap.slot++;
     }
 
     err = slot_prealloc_refill(mm_ram.slot_alloc_inst);
