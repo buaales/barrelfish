@@ -115,7 +115,6 @@ static errval_t zynqmp_gem_enqueue_tx(zynqmp_gem_queue_t *q, regionid_t rid,
     }
 
     tx_addrs[q->tx_tail] = q->region_base + offset + valid_data;
-    assert(length <= ZYNQMP_GEM_FRAMESIZE);
 
     // q tx tail goes first, shared tx tail updates afterwards.
     memcpy((void*)(q->shared_tx_base + q->tx_tail * ZYNQMP_GEM_BUFSIZE), (void*)tx_addrs[q->tx_tail], length);
@@ -169,7 +168,6 @@ static errval_t zynqmp_gem_enqueue(struct devq* q, regionid_t rid,
             return err;
         }
     } else if (flags & NETIF_TXFLAG) {
-        assert(length <= ZYNQMP_GEM_FRAMESIZE);
 
         err = zynqmp_gem_enqueue_tx(q_ext, rid, offset, length, valid_data, valid_length,
                              flags);
