@@ -10,13 +10,13 @@
 #include "kaluga.h"
 #include <memory_maps.h>
 
-struct mem_regions
+struct memory_region
 {
     genpaddr_t base;
     size_t size;
 };
 
-static struct mem_regions regions[] = {
+static struct memory_region regions[] = {
     {PRESET_DATA_BASE, PRESET_DATA_SIZE},
     {SHARED_REGION_VARIABLES_BASE, SHARED_REGION_VARIABLES_SIZE},
     {SHARED_REGION_CNI_MSG_BASE, SHARED_REGION_CNI_MSG_SIZE},
@@ -157,25 +157,28 @@ errval_t init_shared_caps_manager(void)
     devframe.cnode = devcnode;
     devframe.slot = 0;
 
-    for (int i = 0; i <= sizeof(regions) / sizeof(struct mem_region); i++) {
-        err = cap_retype(devframe, phys_cap, 0, ObjType_DevFrame, regions[i].size, 1);
-        if (err_is_ok(err)) {
-            err = mm_add_multi(&shared_manager, devframe, regions[i].size,
-                regions[i].base);
-            if (err_is_fail(err)) {
-                USER_PANIC_ERR(err, "adding region %d FAILED\n", i);
-            }
-        }
-        else {
-            if (err_no(err) == SYS_ERR_REVOKE_FIRST) {
-                printf("cannot retype region %d: need to revoke first; ignoring it\n", i);
+    for (int i = 0; i <= sizeof(regions) / sizeof(struct memory_region); i++) {
+        genpaddr_t base;
+        size_t size;
+        for (base = regions[i].base, size = regions[i].size; size > 0; base += 0x1000, size -= 0x1000) {
+            err = cap_retype(devframe, phys_cap, 0, ObjType_DevFrame, 0x1000, 1);
+            if (err_is_ok(err)) {
+                err = mm_add_multi(&shared_manager, devframe, 0x1000, base);
+                if (err_is_fail(err)) {
+                    USER_PANIC_ERR(err, "adding region %d FAILED\n", i);
+                }
             }
             else {
-                USER_PANIC_ERR(err, "error in retype\n");
+                if (err_no(err) == SYS_ERR_REVOKE_FIRST) {
+                    printf("cannot retype region %d: need to revoke first; ignoring it\n", i);
+                }
+                else {
+                    USER_PANIC_ERR(err, "error in retype\n");
+                }
             }
+            devframe.slot++;
+            phys_cap.slot++;
         }
-        devframe.slot++;
-        phys_cap.slot++;
     }
 
     KALUGA_DEBUG("init_cap_manager DONE\n");
