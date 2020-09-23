@@ -231,14 +231,12 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
             struct capref device_frame;
             KALUGA_DEBUG("%s:%d: mapping 0x%"PRIxLPADDR" %"PRIuLPADDR"\n", __FUNCTION__, __LINE__,
             regs[i]->registers[j][0], regs[i]->registers[j][1]);
-
-            if (regs[i]->registers[j][0] <= 0xffffffff) {
-                lpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
-                err = get_device_cap(base, regs[i]->registers[j][1], &device_frame);
+            genpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
+            if (base <= 0xffffffff) {
+                err = get_device_cap((lpaddr_t)base, regs[i]->registers[j][1], &device_frame);
                 assert(err_is_ok(err));
             }
             else {
-                genpaddr_t base = regs[i]->registers[j][0] & ~(BASE_PAGE_SIZE - 1);
                 err = get_shared_cap(base, regs[i]->registers[j][1], &device_frame);
                 assert(err_is_ok(err));
             }

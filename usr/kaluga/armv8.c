@@ -128,8 +128,6 @@ static errval_t armv8_startup_common(void)
 	if (platform == PI_PLATFORM_ZYNQMP) {
 		err = init_device_caps_manager();
     	assert(err_is_ok(err));
-        err = init_shared_caps_manager();
-        assert(err_is_ok(err));
 
     	struct module_info* mi = find_module("zynqmp_gem");
     	if (mi != NULL) {

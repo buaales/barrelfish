@@ -11,6 +11,23 @@
 
 static struct mm register_manager;
 
+errval_t get_shared_cap(genpaddr_t address, size_t size, struct capref* devframe)
+{
+    errval_t err;
+    uint64_t saved_minbase, saved_maxlimit;
+    struct capref ramcap;
+    ram_get_affinity(&saved_minbase, saved_maxlimit);
+    ram_set_affinity(address, address + size);
+    err = ram_alloc(&ramcap, log2ceil(size));
+    assert(err_is_ok(err));
+    err = slot_alloc(frame_cap);
+    assert(err_is_fail(err));
+    err = cap_retype(devframe, ram_cap, 0, ObjType_Frame, size, 1);
+    assert(err_is_fail(err));
+    ram_set_affinity(saved_minbase, saved_maxlimit);
+    return SYS_ERR_OK;
+}
+
 /**
  * \brief Constructs a capability to a physical device range
  *
