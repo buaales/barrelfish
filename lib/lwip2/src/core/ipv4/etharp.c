@@ -787,6 +787,7 @@ etharp_output_to_arp_index(struct netif *netif, struct pbuf *q, u8_t arp_idx)
     }
   }
 
+  debug_printf("my dbg etherout arp index.\n");
   return ethernet_output(netif, q, (struct eth_addr*)(netif->hwaddr), &arp_table[arp_idx].ethaddr, ETHTYPE_IP);
 }
 
@@ -1018,6 +1019,7 @@ etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q)
     /* we have a valid IP->Ethernet address mapping */
     ETHARP_SET_HINT(netif, i);
     /* send the packet */
+    debug_printf("my dbg etherout arpquery.\n");
     result = ethernet_output(netif, q, srcaddr, &(arp_table[i].ethaddr), ETHTYPE_IP);
   /* pending entry? (either just created or already pending */
   } else if (arp_table[i].state == ETHARP_STATE_PENDING) {
@@ -1182,6 +1184,7 @@ etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr,
   } else
 #endif /* LWIP_AUTOIP */
   {
+      debug_printf("my dbg etherout raw.\n");
     ethernet_output(netif, p, ethsrc_addr, ethdst_addr, ETHTYPE_ARP);
   }
 

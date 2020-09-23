@@ -15,7 +15,7 @@ errval_t get_shared_cap(lpaddr_t address, size_t size, struct capref* devframe)
 {
     errval_t err;
     uint64_t saved_minbase, saved_maxlimit;
-    struct capref ramcap, framecap;
+    struct capref ramcap;
     ram_get_affinity(&saved_minbase, &saved_maxlimit);
     ram_set_affinity(address, address + size);
     err = ram_alloc(&ramcap, log2ceil(size));

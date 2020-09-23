@@ -250,7 +250,7 @@ static void rx_request_caps_response(struct zynqmp_gem_devif_binding* b, uint64_
 }
 
 static void tx_request_caps_call_cb(void* a) {
-    ZYNQMP_GEM_DEBUG("tx_create_queue_call done.");
+    ZYNQMP_GEM_DEBUG("tx_request_caps_call done.");
 }
 
 static void tx_request_caps_call(struct zynqmp_gem_queue* st) {
@@ -267,11 +267,11 @@ static void tx_request_caps_call(struct zynqmp_gem_queue* st) {
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
-                ZYNQMP_GEM_DEBUG("tx_create_queue_call register failed!");
+                ZYNQMP_GEM_DEBUG("tx_request_caps_call register failed!");
             }
         }
         else {
-            ZYNQMP_GEM_DEBUG("tx_create_queue_call error\n");
+            ZYNQMP_GEM_DEBUG("tx_request_caps_call error\n");
         }
     }
 }
