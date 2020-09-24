@@ -1182,7 +1182,7 @@ etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr,
   if(ip4_addr_islinklocal(ipsrc_addr)) {
     ethernet_output(netif, p, ethsrc_addr, &ethbroadcast, ETHTYPE_ARP);
   } else
-#endif /* LWIP_AUTOIP *lib  /
+#endif /* LWIP_AUTOIP */
   {
       printf("my dbg etherout raw.\n");
     ethernet_output(netif, p, ethsrc_addr, ethdst_addr, ETHTYPE_ARP);

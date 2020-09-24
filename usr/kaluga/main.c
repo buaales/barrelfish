@@ -64,6 +64,7 @@ static void add_start_function_overrides(void)
 
 #ifdef __ARM_ARCH_8A__
     set_start_function("zynqmp_gem", start_networking_new);
+    set_start_function("zynqmp_cni", default_start_function_new);
 #endif
 
     //set_start_function("driverdomain", default_start_function_new);

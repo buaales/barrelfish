@@ -97,6 +97,7 @@
                "e1000_devif",
                "zynqmp_cni_devif",
                "zynqmp_gem_devif",
+               "zynqmp_gem_pollif",
                "descq",
                "ddomain",
                "dcontrol",

@@ -40,5 +40,6 @@ module /armv8/sbin/net_sockets_server nospawn
 # module /armv8/sbin/test_net_sockets 192.168.0.1
 # for client
 # module /armv8/sbin/test_net_sockets 192.168.0.2
+# module /armv8/sbin/zynqmp_gem_poll
 module /armv8/sbin/angler serial0.terminal xterm
 module /armv8/sbin/fish nospawn

@@ -14,7 +14,7 @@
  * specific part connects to it
  */
 interface zynqmp_gem_devif "zynqmp_gem devif communication interface" {
-    message request_cap_call();
-    message request_cap_response(uint64 mac, cap vars, cap tx_region, cap rx_region);
+    message request_caps_call();
+    message request_caps_response(cap vars);
     message frame_polled();
 };

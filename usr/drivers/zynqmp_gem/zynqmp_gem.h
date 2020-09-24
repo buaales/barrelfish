@@ -21,8 +21,14 @@ struct zynqmp_gem_state {
     /* For use with the net_queue_manager */
     char *service_name;
     struct zynqmp_gem_devif_binding* binding;
+    struct zynqmp_gem_pollif_binding* poll_binding;
 };
 
-void poll(void);
+struct zynqmp_gem_poll_state {
+    struct capref shared_vars_region;
+    lvaddr_t shared_vars_base;
+    bool bound;
+    struct zynqmp_gem_pollif_binding* binding;
+};
 
 #endif //ZYNQ_GEM_H

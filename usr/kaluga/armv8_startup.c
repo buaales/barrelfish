@@ -237,7 +237,6 @@ static void provide_driver_with_caps(struct driver_instance* drv, char* name) {
                 assert(err_is_ok(err));
             }
             else {
-                debug_printf("my dbg provide cap x2.\n");
                 err = get_shared_cap(base, regs[i]->registers[j][1], &device_frame);
                 assert(err_is_ok(err));
             }

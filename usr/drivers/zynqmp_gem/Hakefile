@@ -16,8 +16,8 @@
   },
   build library { target = "zynqmp_gem_module",
     cFiles = [ "zynqmp_gem.c"],
-    flounderBindings = [ "zynqmp_gem_devif" ],
-    flounderDefs = [ "zynqmp_gem_devif" ],
+    flounderBindings = [ "zynqmp_gem_devif", "zynqmp_gem_pollif" ],
+    flounderDefs = [ "zynqmp_gem_devif", "zynqmp_gem_pollif" ],
     mackerelDevices = [ "zynqmp_gem" ],
     architectures = [ "armv8" ],
     addCFlags = [ "-DLIBRARY", "-D ZYNQMP_GEM_DEBUG_ON" ]
@@ -29,5 +29,11 @@
     addLibraries = libDeps [ "driverkit", "thc", "contmng", "skb", "net", "lwip2"],
     addModules = ["zynqmp_gem_module"],
     architectures = ["armv8"]
+  },
+  build application {target = "zynqmp_gem_poll", 
+    cFiles = ["zynqmp_gem_poll.c"],
+    flounderBindings = ["zynqmp_gem_pollif" ],
+    flounderDefs = [ "zynqmp_gem_pollif" ],
+    architectures = [ "armv8" ],
   }
 ]

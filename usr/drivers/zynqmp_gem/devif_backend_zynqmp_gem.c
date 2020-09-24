@@ -232,7 +232,7 @@ static void rx_frame_polled(struct zynqmp_gem_devif_binding* b) {
     q->isr(q);
 }
 
-static void rx_request_caps_response(struct zynqmp_gem_devif_binding* b, uint64_t mac, struct capref vars, struct capref tx, struct capref rx) {
+static void rx_request_cap_response(struct zynqmp_gem_devif_binding* b, uint64_t mac, struct capref vars, struct capref tx, struct capref rx) {
     struct zynqmp_gem_queue* q = b->st;
     void* va;
     q->mac_address = mac;
@@ -247,29 +247,29 @@ static void rx_request_caps_response(struct zynqmp_gem_devif_binding* b, uint64_
     q->shared_rx_base = (lvaddr_t)va;
 }
 
-static void tx_request_caps_call_cb(void* a) {
-    ZYNQMP_GEM_DEBUG("tx_request_caps_call done.");
+static void tx_request_cap_call_cb(void* a) {
+    ZYNQMP_GEM_DEBUG("tx_request_cap_call done.");
 }
 
-static void tx_request_caps_call(struct zynqmp_gem_queue* st) {
-    ZYNQMP_GEM_DEBUG("tx_request_caps_call\n");
+static void tx_request_cap_call(struct zynqmp_gem_queue* st) {
+    ZYNQMP_GEM_DEBUG("tx_request_cap_call\n");
     errval_t err;
-    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_caps_call_cb, (void*)(st->binding));
-    err = zynqmp_gem_devif_request_caps_call__tx(st->binding, txcont);
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_call_cb, (void*)(st->binding));
+    err = zynqmp_gem_devif_request_cap_call__tx(st->binding, txcont);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
-            ZYNQMP_GEM_DEBUG("tx_create_queue_call again\n");
+            ZYNQMP_GEM_DEBUG("tx_request_cap_call again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT((void (*)(void*))tx_request_caps_call, (void*)(st->binding));
+            txcont = MKCONT((void (*)(void*))tx_request_cap_call, (void*)(st->binding));
             err = st->binding->register_send(st->binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
-                ZYNQMP_GEM_DEBUG("tx_request_caps_call register failed!");
+                ZYNQMP_GEM_DEBUG("tx_request_cap_call register failed!");
             }
         }
         else {
-            ZYNQMP_GEM_DEBUG("tx_request_caps_call error\n");
+            ZYNQMP_GEM_DEBUG("tx_request_cap_call error\n");
         }
     }
 }
@@ -278,7 +278,7 @@ static void bind_cb(void *st, errval_t err, struct zynqmp_gem_devif_binding *b)
 {
     zynqmp_gem_queue_t* q = (zynqmp_gem_queue_t*) st;
     b->st = st;
-    b->rx_vtbl.request_caps_response = rx_request_caps_response;
+    b->rx_vtbl.request_cap_response = rx_request_cap_response;
     b->rx_vtbl.frame_polled = rx_frame_polled;
     q->binding = b;
     q->bound = true;
@@ -320,7 +320,7 @@ errval_t zynqmp_gem_queue_create(zynqmp_gem_queue_t ** pq, void (*int_handler)(v
         event_dispatch(get_default_waitset());
     }
 
-    tx_request_caps_call(q);
+    tx_request_cap_call(q);
 
     if (err_is_fail(err)) {
         return err;

@@ -433,7 +433,6 @@ initialize_ram_alloc(void)
                 mem_cap.slot++;
                 continue;
             }
-            debug_printf("my dbg init ram alloc bi, base/size:%lx/%x\n", bi->regions[i].mr_base, bi->regions[i].mr_bytes);
             err = mm_add_multi(&mm_ram, mem_cap, bi->regions[i].mr_bytes,
                                bi->regions[i].mr_base);
             if (err_is_ok(err)) {

@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------
 --
 -- This file is distributed under the terms in the attached LICENSE file.
--- Hakefile for drivers/zynqmp_gem
+-- Hakefile for drivers/zynqmp_cni
 --
 --------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
     addLibraries = ["mm"],
     mackerelDevices = [ "zynqmp_cni" ],
     architectures = [ "armv8" ],
-    addCFlags = [ "-DLIBRARY", "-D ZYNQMP_GEM_DEBUG_ON" ]
+    addCFlags = [ "-DLIBRARY", "-D ZYNQMP_CNI_DEBUG_ON" ]
   },
   build application { target = "zynqmp_cni",
     cFiles = ["main.c"],
