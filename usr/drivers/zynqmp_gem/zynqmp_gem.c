@@ -16,6 +16,7 @@
 #include <maps/zynqmp_map.h>
 
 #include <if/zynqmp_gem_devif_defs.h>
+#include <if/zynqmp_gem_pollif_defs.h>
 
 #include <dev/zynqmp_gem_dev.h>
 
@@ -27,6 +28,7 @@
 static struct zynqmp_gem_state* gem_state;
 
 static void tx_request_cap_response_devif(struct zynqmp_gem_state* st);
+static void tx_request_cap_response_devif(struct zynqmp_gem_state* st);
 static void tx_frame_polled_devif(struct zynqmp_gem_state* st);
 
 static void rx_request_cap_call_devif(struct zynqmp_gem_devif_binding *b) {
@@ -35,7 +37,7 @@ static void rx_request_cap_call_devif(struct zynqmp_gem_devif_binding *b) {
     tx_request_cap_response_devif(state);
 }
 
-static rx_request_cap_call_pollif(struct zynqmp_gem_pollif_binding* b) {
+static void rx_request_cap_call_pollif(struct zynqmp_gem_pollif_binding* b) {
     ZYNQMP_GEM_DEBUG("rx_request_cap_call_pollif\n");
     struct zynqmp_gem_state* state = b->st;
     tx_request_cap_response_pollif(state);
@@ -105,15 +107,15 @@ static void tx_request_cap_response_pollif_cb(void* a) {
 static void tx_request_cap_response_pollif(struct zynqmp_gem_state* st) {
     ZYNQMP_GEM_DEBUG("tx_request_cap_response_pollif\n");
     errval_t err;
-    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_response_pollif_cb, (void*)(st->binding));
-    err = zynqmp_gem_pollif_request_cap_response__tx(st->binding, txcont, st->shared_vars_region);
+    struct event_closure txcont = MKCONT((void (*)(void*))tx_request_cap_response_pollif_cb, (void*)(st->poll_binding));
+    err = zynqmp_gem_pollif_request_cap_response__tx(st->poll_binding, txcont, st->shared_vars_region);
 
     if (err_is_fail(err)) {
         if (err_no(err) == FLOUNDER_ERR_TX_BUSY) {
             ZYNQMP_GEM_DEBUG("tx_frame_polled_pollif again\n");
             struct waitset* ws = get_default_waitset();
-            txcont = MKCONT((void (*)(void*))tx_request_cap_response_pollif, (void*)(st->binding));
-            err = st->binding->register_send(st->binding, ws, txcont);
+            txcont = MKCONT((void (*)(void*))tx_request_cap_response_pollif, (void*)(st->poll_binding));
+            err = st->poll_binding->register_send(st->poll_binding, ws, txcont);
             if (err_is_fail(err)) {
                 // note that only one continuation may be registered at a time
                 ZYNQMP_GEM_DEBUG("tx_frame_polled_pollif register failed!");

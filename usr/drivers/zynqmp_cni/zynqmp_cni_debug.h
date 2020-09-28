@@ -4,7 +4,6 @@
 /*****************************************************************
  * Debug printer:
  *****************************************************************/
-#define ZYNQMP_CNI_DEBUG_ON
 #if defined(ZYNQMP_CNI_DEBUG_ON) || defined(GLOBAL_DEBUG)
 #define ZYNQMP_CNI_DEBUG(x...) printf("CNI DEBUG: " x)
 #else

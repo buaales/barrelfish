@@ -137,7 +137,7 @@ static errval_t armv8_startup_common(void)
         	assert(err_is_ok(err));
     	}
         
-        struct module_info* mi = find_module("zynqmp_cni");
+        mi = find_module("zynqmp_cni");
         if (mi != NULL) {
             KALUGA_DEBUG("module found.\n");
             err = mi->start_function(0, mi, "zynqmp_cni {}", NULL);

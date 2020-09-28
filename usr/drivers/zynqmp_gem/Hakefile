@@ -30,10 +30,10 @@
     addModules = ["zynqmp_gem_module"],
     architectures = ["armv8"]
   },
-  build application {target = "zynqmp_gem_poll", 
+  build application { target = "zynqmp_gem_poll", 
     cFiles = ["zynqmp_gem_poll.c"],
     flounderBindings = ["zynqmp_gem_pollif" ],
     flounderDefs = [ "zynqmp_gem_pollif" ],
-    architectures = [ "armv8" ],
+    architectures = [ "armv8" ]
   }
 ]

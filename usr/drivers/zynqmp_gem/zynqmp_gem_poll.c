@@ -1,6 +1,9 @@
 
 #include <barrelfish/barrelfish.h>
+#include <barrelfish/nameservice_client.h>
+#include <if/zynqmp_gem_pollif_defs.h>
 #include "zynqmp_gem.h"
+#include "zynqmp_gem_debug.h"
 
 static struct zynqmp_gem_poll_state *poll_state;
 
@@ -76,8 +79,8 @@ static void bind_cb(void* st, errval_t err, struct zynqmp_gem_pollif_binding* b)
     state->bound = true;
 }
 
-static errval_t init() {
-
+static errval_t init(void) {
+    errval_t err;
     poll_state = (struct zynqmp_gem_poll_state*)malloc(sizeof(struct zynqmp_gem_poll_state));
 
     char service[128] = "zynqmp_gem_pollif";

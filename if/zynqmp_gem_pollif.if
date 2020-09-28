@@ -13,8 +13,8 @@
  * interface. The driver exposes the interface and the devif e1000 device
  * specific part connects to it
  */
-interface zynqmp_gem_devif "zynqmp_gem devif communication interface" {
-    message request_caps_call();
-    message request_caps_response(cap vars);
+interface zynqmp_gem_pollif "zynqmp_gem devif communication interface" {
+    message request_cap_call();
+    message request_cap_response(cap vars);
     message frame_polled();
 };
