@@ -28,7 +28,7 @@
 static struct zynqmp_gem_state* gem_state;
 
 static void tx_request_cap_response_devif(struct zynqmp_gem_state* st);
-static void tx_request_cap_response_devif(struct zynqmp_gem_state* st);
+static void tx_request_cap_response_pollif(struct zynqmp_gem_state* st);
 static void tx_frame_polled_devif(struct zynqmp_gem_state* st);
 
 static void rx_request_cap_call_devif(struct zynqmp_gem_devif_binding *b) {
